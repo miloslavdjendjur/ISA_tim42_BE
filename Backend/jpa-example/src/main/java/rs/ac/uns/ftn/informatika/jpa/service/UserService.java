@@ -1,21 +1,28 @@
 package rs.ac.uns.ftn.informatika.jpa.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
+
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     public List<User> getAllUsers() {
@@ -44,4 +51,38 @@ public class UserService {
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
+
+    public User registerUser(User user) {
+        // Encrypt the password
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        // Generate verification token and set user as inactive
+        String token = UUID.randomUUID().toString();
+        user.setVerificationToken(token);
+        user.setActive(false);
+
+        // Save the user
+        User savedUser = userRepository.save(user);
+
+        // Send the activation email
+        emailService.sendActivationEmail(user.getEmail(), token);
+
+        return savedUser;
+    }
+
+    public boolean activateUser(String token) {
+        Optional<User> userOptional = userRepository.findByVerificationToken(token);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setActive(true);
+            user.setVerificationToken(null); // Clear token to prevent reuse
+            userRepository.save(user);
+            return true;
+        } else {
+            return false; // Token is invalid or user not found
+        }
+    }
+
+
 }
