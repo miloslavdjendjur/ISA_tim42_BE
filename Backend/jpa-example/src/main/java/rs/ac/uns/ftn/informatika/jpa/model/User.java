@@ -34,7 +34,10 @@ public class User {
 
     private String address;
 
+    @Column(nullable = false)
     private boolean isActive = false;
+
+    @Column(name = "verification_token")
     private String verificationToken;
 
     @Column(nullable = false)
@@ -129,6 +132,8 @@ public class User {
     }
 
     public void setActive(boolean active) { this.isActive = active; }
+
+    public boolean getActive() { return this.isActive; }
 
     public void setVerificationToken(String token) { this.verificationToken = token; }
 }

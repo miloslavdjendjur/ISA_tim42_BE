@@ -10,7 +10,7 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     // Additional query methods can be added here, if needed
-    User findByEmail(String email);
+    Optional<User> findByEmail(String email);
 
     Optional<User> findByVerificationToken(String token);
 }

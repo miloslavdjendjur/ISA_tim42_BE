@@ -46,12 +46,21 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
+        System.out.println("Attempting login for email: " + loginRequest.getEmail());
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+            System.out.println("Authentication successful for email: " + loginRequest.getEmail());
             return ResponseEntity.ok("Login successful!");
         } catch (AuthenticationException e) {
+            System.out.println("Authentication failed for email: " + loginRequest.getEmail());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        } catch (Exception e) {
+            System.out.println("An unexpected error occurred during login for email: " + loginRequest.getEmail());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred during login: " + e.getMessage());
         }
     }
+
+
 }
