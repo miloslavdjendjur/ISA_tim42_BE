@@ -25,3 +25,18 @@ insert into exam (student_id, course_id, date, grade) values (1, 1, '2016-02-01'
 insert into exam (student_id, course_id, date, grade) values (1, 2, '2016-04-19', 8);
 insert into exam (student_id, course_id, date, grade) values (2, 1, '2016-02-01', 10);
 insert into exam (student_id, course_id, date, grade) values (2, 2, '2016-04-19', 10);
+
+INSERT INTO public.users (
+    id, activated, address, email, followers_count, full_name, password, role, username
+)
+VALUES (
+           1,                -- id (use 1 for the default user ID)
+           true,             -- activated (assuming this means the user is active)
+           'Default Address',           -- address (you can adjust this to your needs)
+           'defaultuser@example.com',       -- email (a placeholder email)
+           0,                   -- followers_count (starting count, usually 0)
+           'Default User',          -- full_name (name for the default user)
+           '123',               -- password (hash if necessary)
+           'REGISTERED',           -- role (use an appropriate role such as 'USER' or 'ADMIN')
+           'defaultuser'     -- username (a unique username for the default user)
+       );
