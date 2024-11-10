@@ -1,10 +1,30 @@
 package rs.ac.uns.ftn.informatika.jpa.dto;
 
+import rs.ac.uns.ftn.informatika.jpa.model.Location;
+
 public class LocationDTO {
-    private Long id;
-    private double latitude;
-    private double longitude;
+
+    private String latitude;
+    private String longitude;
     private String address;
 
-    // Constructors, Getters, and Setters
+    public LocationDTO(Location location) {
+        this.latitude = String.valueOf(location.getLatitude());
+        this.longitude = String.valueOf(location.getLongitude());
+        this.address = location.getAddress();
+    }
+
+    // Getters
+    public String getLatitude() {
+        return latitude;
+    }
+
+    public String getLongitude() {
+        return longitude;
+    }
+
+    public String getAddress() {
+        return address;
+    }
 }
+

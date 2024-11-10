@@ -23,10 +23,10 @@ public class LocationController {
     }
 
     @PostMapping
-    public ResponseEntity<Location> createLocation(@RequestParam double latitude,
-                                                   @RequestParam double longitude,
+    public ResponseEntity<Location> createLocation(@RequestParam String latitude,
+                                                   @RequestParam String longitude,
                                                    @RequestParam String address) {
-        Location location = locationService.createLocation(latitude, longitude, address);
+        Location location = locationService.createOrRetrieveLocation(latitude, longitude, address);
         return new ResponseEntity<>(location, HttpStatus.CREATED);
     }
 

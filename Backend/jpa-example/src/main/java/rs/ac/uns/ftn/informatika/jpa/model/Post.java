@@ -16,17 +16,23 @@ public class Post {
     @Column(nullable = false, length = 500)
     private String description;
 
+    @Lob
     @Column(nullable = false)
     private String imagePath;
 
-    @Column(nullable = false)
+    @PrePersist
+    protected void onCreate() {
+        this.createdTime = LocalDateTime.now();
+    }
+
+    @Column(name = "created_time", nullable = false)
     private LocalDateTime createdTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
     @JoinColumn(name = "location_id")
     private Location location;
 
@@ -41,18 +47,68 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments = new HashSet<>();
 
-    // Constructors, Getters, Setters
-
-    public Post() {
+    // Getters and Setters
+    public Long getId() {
+        return id;
     }
 
-    public Post(String description, String imagePath, LocalDateTime createdTime, User user, Location location) {
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public void setImagePath(String imagePath) {
         this.imagePath = imagePath;
+    }
+
+    public LocalDateTime getCreatedTime() {
+        return createdTime;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
         this.createdTime = createdTime;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
         this.user = user;
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
         this.location = location;
     }
 
-    // Additional methods for managing likes and comments
+    public Set<User> getLikes() {
+        return likes;
+    }
+
+    public void setLikes(Set<User> likes) {
+        this.likes = likes;
+    }
+
+    public Set<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(Set<Comment> comments) {
+        this.comments = comments;
+    }
 }

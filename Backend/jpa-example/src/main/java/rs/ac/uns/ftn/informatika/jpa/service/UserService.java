@@ -26,6 +26,15 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    public User findById(Long id) {
+        return userRepository.findById(id).orElseGet(() -> {
+            User defaultUser = new User();
+            defaultUser.setId(-1L);
+            defaultUser.setUsername("unknown_user");
+            return defaultUser;
+        });
+    }
+
     public User createUser(User user) {
         return userRepository.save(user);
     }

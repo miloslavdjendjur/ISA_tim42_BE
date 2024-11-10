@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.service.PostService;
 
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/posts")
 public class PostController {
@@ -25,25 +27,16 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<Post> createPost(@RequestParam("description") String description,
-                                           @RequestParam("latitude") double latitude,
-                                           @RequestParam("longitude") double longitude,
-                                           @RequestParam("address") String address,
-                                           @RequestParam("file") MultipartFile file,
-                                           @RequestParam("userId") Long userId) {
-        try {
-            // Save the image file
-            String uploadDir = "uploads/images/";
-            String filePath = uploadDir + file.getOriginalFilename();
-            File destinationFile = new File(filePath);
-            file.transferTo(destinationFile);
+    public ResponseEntity<PostDTO> createPost(
+            @RequestParam("description") String description,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "latitude", required = false) String latitude,
+            @RequestParam(value = "longitude", required = false) String longitude,
+            @RequestParam(value = "address", required = false) String address,
+            @RequestParam("userId") Long userId) {
 
-            // Create post
-            Post post = postService.createPost(description, filePath, latitude, longitude, address, userId);
-            return new ResponseEntity<>(post, HttpStatus.CREATED);
-        } catch (IOException e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        PostDTO createdPost = postService.createPost(description, file, latitude, longitude, address, userId);
+        return ResponseEntity.ok(createdPost);
     }
 
     @GetMapping("/{id}")
