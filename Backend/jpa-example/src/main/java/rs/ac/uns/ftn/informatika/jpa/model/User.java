@@ -1,6 +1,9 @@
 package rs.ac.uns.ftn.informatika.jpa.model;
 
 import javax.persistence.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,10 +15,15 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @NotBlank
+    @Size(max = 50)
+    @Email
+    @Column(unique = true)
     private String email;
 
-    @Column(unique = true, nullable = false)
+    @NotBlank
+    @Size(max = 20)
+    @Column(unique = true)
     private String username;
 
     @Column(nullable = false)
@@ -25,6 +33,12 @@ public class User {
     private String fullName;
 
     private String address;
+
+    @Column(nullable = false)
+    private boolean isActive = false;
+
+    @Column(name = "verification_token")
+    private String verificationToken;
 
     @Column(nullable = false)
     private int followersCount = 0;
@@ -116,4 +130,10 @@ public class User {
     public void setRole(Role role) {
         this.role = role;
     }
+
+    public void setActive(boolean active) { this.isActive = active; }
+
+    public boolean getActive() { return this.isActive; }
+
+    public void setVerificationToken(String token) { this.verificationToken = token; }
 }
