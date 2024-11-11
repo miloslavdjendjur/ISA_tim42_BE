@@ -8,7 +8,6 @@ import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
 import rs.ac.uns.ftn.informatika.jpa.mapper.CommentDTOMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.Comment;
-import rs.ac.uns.ftn.informatika.jpa.model.Location;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
@@ -35,14 +34,21 @@ public class PostService {
         this.commentDTOMapper = commentDTOMapper;
     }
 
-    public Post createPost(String description, String imagePath, double latitude, double longitude, String address, Long userId) {
-        User user = userService.getUserById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Location location = locationService.createLocation(latitude, longitude, address);
+    public PostDTO createPost(PostDTO postDTO) {
+        Post post = new Post();
+        post.setDescription(postDTO.getDescription());
+        post.setImagePath(postDTO.getImagePath());
+        post.setCreatedTime(LocalDateTime.now());
 
-        Post post = new Post(description, imagePath, LocalDateTime.now(), user, location);
-        return postRepository.save(post);
+        User user = userService.getUserById(postDTO.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        post.setUser(user);
+
+        post = postRepository.save(post);
+        postDTO.setId(post.getId());
+        return postDTO;
     }
+
 
     public Optional<Post> getPostById(Long id) {
         return postRepository.findById(id);

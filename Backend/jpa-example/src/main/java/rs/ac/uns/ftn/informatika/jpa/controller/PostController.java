@@ -5,8 +5,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
+import rs.ac.uns.ftn.informatika.jpa.service.ImageService;
 import rs.ac.uns.ftn.informatika.jpa.service.PostService;
 
 import java.io.File;
@@ -19,33 +21,35 @@ import java.util.Optional;
 public class PostController {
 
     private final PostService postService;
+    private final ImageService imageService;
 
     @Autowired
-    public PostController(PostService postService) {
+    public PostController(PostService postService, ImageService imageService) {
         this.postService = postService;
+        this.imageService = imageService;
     }
 
     @PostMapping
-    public ResponseEntity<Post> createPost(@RequestParam("description") String description,
-                                           @RequestParam("latitude") double latitude,
-                                           @RequestParam("longitude") double longitude,
-                                           @RequestParam("address") String address,
-                                           @RequestParam("file") MultipartFile file,
-                                           @RequestParam("userId") Long userId) {
-        try {
-            // Save the image file
-            String uploadDir = "uploads/images/";
-            String filePath = uploadDir + file.getOriginalFilename();
-            File destinationFile = new File(filePath);
-            file.transferTo(destinationFile);
+    public ResponseEntity<PostDTO> createPost(
+            @RequestParam("description") String description,
+            @RequestParam("userId") Long userId,
+            @RequestParam("file") MultipartFile file) throws IOException {
 
-            // Create post
-            Post post = postService.createPost(description, filePath, latitude, longitude, address, userId);
-            return new ResponseEntity<>(post, HttpStatus.CREATED);
-        } catch (IOException e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        // Use ImageService to handle image storage
+        String imagePath = imageService.saveImage(file);
+
+        // Create a new PostDTO
+        PostDTO postDTO = new PostDTO();
+        postDTO.setDescription(description);
+        postDTO.setImagePath(imagePath);
+        postDTO.setUserId(userId);
+
+        // Save post with PostService
+        PostDTO createdPost = postService.createPost(postDTO);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Post> getPostById(@PathVariable Long id) {

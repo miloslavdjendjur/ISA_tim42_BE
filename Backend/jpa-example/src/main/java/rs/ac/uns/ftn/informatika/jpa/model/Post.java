@@ -22,7 +22,7 @@ public class Post {
     private String imagePath;
 
     @Column(nullable = false)
-    private LocalDateTime createdTime;
+    private LocalDateTime createdTime = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
