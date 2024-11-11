@@ -61,6 +61,7 @@ public class UserService {
         user.setVerificationToken(token);
         user.setActive(false);
 
+        user.setRole(User.Role.REGISTERED);
         // Save the user
         User savedUser = userRepository.save(user);
 
@@ -70,19 +71,34 @@ public class UserService {
         return savedUser;
     }
 
-    public boolean activateUser(String token) {
+    public int activateUser(String token) {
         Optional<User> userOptional = userRepository.findByVerificationToken(token);
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            user.setActive(true);
-            user.setVerificationToken(null); // Clear token to prevent reuse
-            userRepository.save(user);
-            return true;
+            if (!user.getActive()) {
+                user.setActive(true);
+                user.setVerificationToken(null); // Clear token to prevent reuse
+                userRepository.save(user);
+                return 1; // Successfully activated
+            } else {
+                return -1; // User already active
+            }
         } else {
-            return false; // Token is invalid or user not found
+            return 0; // Invalid token
         }
     }
+
+
+
+    public boolean emailExists(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
+
+    public boolean usernameExists(String username) {
+        return userRepository.findByUsername(username).isPresent();
+    }
+
 
 
 }

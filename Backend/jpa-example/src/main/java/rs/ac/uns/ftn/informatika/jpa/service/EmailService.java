@@ -16,7 +16,7 @@ public class EmailService {
     }
 
     public void sendActivationEmail(String to, String token) {
-        String activationUrl = "http://localhost:8080/api/auth/activate?token=" + token;
+        String activationUrl = "http://localhost:4200/activate?token=" + token;
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);

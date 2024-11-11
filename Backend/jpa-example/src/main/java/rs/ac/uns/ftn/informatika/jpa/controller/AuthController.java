@@ -35,21 +35,45 @@ public class AuthController {
 
     @CrossOrigin(origins = "http://localhost:4200")
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@Valid @RequestBody User user) {
+    public ResponseEntity<Map<String, String>> registerUser(@Valid @RequestBody User user) {
+        Map<String, String> response = new HashMap<>();
+
+        if (userService.emailExists(user.getEmail())) {
+            response.put("error", "A user with this email already exists.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+
+        if (userService.usernameExists(user.getUsername())) {
+            response.put("error", "A user with this username already exists.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+
         userService.registerUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully. Please check your email for activation link.");
+        response.put("message", "User registered successfully. Please check your email for activation link.");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/activate")
-    public ResponseEntity<String> activateAccount(@RequestParam("token") String token) {
-        boolean isActivated = userService.activateUser(token);
+    public ResponseEntity<Map<String, String>> activateAccount(@RequestParam("token") String token) {
+        System.out.println("Activation endpoint hit with token: " + token); // Log each request
+        Map<String, String> response = new HashMap<>();
+        int activationResult = userService.activateUser(token);
 
-        if (isActivated) {
-            return ResponseEntity.ok("Account activated successfully. You can now log in.");
+        if (activationResult == 1) {
+            response.put("message", "Account activated successfully. You can now log in.");
+            return ResponseEntity.ok(response); // HTTP 200 for success
+        } else if (activationResult == -1) {
+            response.put("error", "This account has already been activated.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response); // HTTP 409 for already active
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired activation token.");
+            response.put("error", "Invalid or expired activation token.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response); // HTTP 400 for invalid token
         }
     }
+
+
+
+
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest) {
