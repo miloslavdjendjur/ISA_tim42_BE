@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.service.PostService;
 
@@ -53,9 +54,9 @@ public class PostController {
     }
 
     // Add this method for GET /api/posts to fetch all posts
-    @GetMapping
-    public ResponseEntity<List<Post>> getAllPosts() {
-        List<Post> posts = postService.getAllPosts();
+    @GetMapping("/all")
+    public ResponseEntity<List<PostViewDTO>> getAllPosts() {
+        List<PostViewDTO> posts = postService.getAllPosts();
         return ResponseEntity.ok(posts);
     }
 }

@@ -1,27 +1,20 @@
-insert into student (index_number, first_name, last_name) values ('5', 'Marko', 'Marković');
-insert into student (index_number, first_name, last_name) values ('ra2-2014', 'Milan', 'Milanović');
-insert into student (index_number, first_name, last_name) values ('ra3-2014', 'Ivana', 'Ivanović');
-insert into student (index_number, first_name, last_name) values ('ra4-2014', 'Bojan', 'Bojanović');
-insert into student (index_number, first_name, last_name) values ('ra5-2014', 'Pera', 'Perić');
-insert into student (index_number, first_name, last_name) values ('ra6-2014', 'Zoran', 'Zoranović');
-insert into student (index_number, first_name, last_name) values ('ra7-2014', 'Bojana', 'Bojanović');
-insert into student (index_number, first_name, last_name) values ('ra8-2014', 'Milana', 'Milanović');
-insert into student (index_number, first_name, last_name) values ('ra9-2014', 'Jovana', 'Jovanić');
+-- Prvo kreirajmo korisnike i lokacije ako već ne postoje
+INSERT INTO users
+    (id, email, username, password, full_name, address, is_active, followers_count, role, activated) VALUES
+    (1, 'johndoe@example.com', 'johndoe', 'password123', 'John Doe', '123 Main St', true, 10, 'REGISTERED', true),
+    (2, 'janedoe@example.com', 'janedoe', 'password456', 'Jane Doe', '456 Second St', true, 5, 'REGISTERED', true);
 
-insert into course (name) values ('Matematika');
-insert into course (name) values ('Osnove programiranja');
-insert into course (name) values ('Objektno programiranje');
+INSERT INTO locations (id, latitude, longitude, address) VALUES
+    (1, 45.2671, 19.8335, '123 Main St'),
+    (2, 44.7866, 20.4489, '456 Second St');
 
-insert into teacher (first_name, last_name, deleted) values ('Strahinja', 'Simić', false);
-insert into teacher (first_name, last_name, deleted) values ('Marina', 'Antić', false);
-insert into teacher (first_name, last_name, deleted) values ('Siniša', 'Branković', false);
-
-insert into teaching (course_id, teacher_id) values (1, 1);
-insert into teaching (course_id, teacher_id) values (1, 2);
-insert into teaching (course_id, teacher_id) values (2, 2);
-insert into teaching (course_id, teacher_id) values (3, 3);
-
-insert into exam (student_id, course_id, date, grade) values (1, 1, '2016-02-01', 9);
-insert into exam (student_id, course_id, date, grade) values (1, 2, '2016-04-19', 8);
-insert into exam (student_id, course_id, date, grade) values (2, 1, '2016-02-01', 10);
-insert into exam (student_id, course_id, date, grade) values (2, 2, '2016-04-19', 10);
+-- Sada unosimo postove
+INSERT INTO posts (id, description, image_path, created_time, user_id, location_id) VALUES
+    (1, 'Beautiful sunset at the beach', '/images/sunset.jpg', '2024-11-11 17:00:00', 1, 1),
+    (2, 'Amazing view from the mountain top', '/images/mountain.jpg', '2024-11-12 09:30:00', 2, 2),
+    (3, 'Exploring the old city streets', '/images/city.jpg', '2024-11-13 14:45:00', 1, 1);
+INSERT INTO comments (id, text, created_time, user_id, post_id) VALUES
+    (1, 'Amazing photo, really beautiful!', '2024-11-11 17:05:00', 2, 1), -- Jane Doe komentariše na post #1
+    (2, 'Thanks! The view was breathtaking.', '2024-11-11 17:10:00', 1, 1), -- John Doe odgovara na komentar
+    (3, 'Looks like a great place to visit!', '2024-11-12 10:00:00', 1, 2), -- John Doe komentariše na post #2
+    (4, 'I love exploring old cities too!', '2024-11-13 15:00:00', 2, 3); -- Jane Doe komentariše na post #3
