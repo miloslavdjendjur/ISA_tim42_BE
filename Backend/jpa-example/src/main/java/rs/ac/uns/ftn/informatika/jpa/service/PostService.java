@@ -52,12 +52,14 @@ public class PostService {
     public List<PostViewDTO> getAllPosts() {
         List<Post> posts = postRepository.findAll();
         posts.forEach(post -> Hibernate.initialize(post.getComments()));
-        List<Comment> comments = new ArrayList<>();
+        //List<Comment> comments = new ArrayList<>();
         List<PostViewDTO> postDTOs = new ArrayList<>();
         for (Post post : posts) {
             List<CommentDTO> commentDTOs = new ArrayList<>();
             for (Comment comment : post.getComments()) {
-                CommentDTO commentDTO = commentDTOMapper.fromCommentToDTO(comment);
+                //CommentDTO commentDTO = commentDTOMapper.fromCommentToDTO(comment);
+                CommentDTO commentDTO = new CommentDTO(comment.getId(),comment.getText(),comment.getCreatedTime(),comment.getUser().getId(),
+                        comment.getPost().getId());
                 commentDTOs.add(commentDTO);
             }
             PostViewDTO postDTO = new PostViewDTO(
