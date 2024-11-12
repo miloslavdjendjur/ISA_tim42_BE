@@ -1,11 +1,10 @@
 package rs.ac.uns.ftn.informatika.jpa.model;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.time.LocalDate;
 
 @Entity
+@Table(name = "images")
 public class Image {
 
     @Id
@@ -13,6 +12,9 @@ public class Image {
     private Long id;
 
     private String path;
+
+    private LocalDate uploadDate;
+    private boolean compressed;
 
     // Constructors, getters, and setters
     public Image() {}
@@ -35,5 +37,21 @@ public class Image {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public LocalDate getUploadDate() {
+        return uploadDate;
+    }
+
+    public void setUploadDate(LocalDate uploadDate) {
+        this.uploadDate = uploadDate;
+    }
+
+    public boolean isCompressed() {
+        return compressed;
+    }
+
+    public void setCompressed(boolean compressed) {
+        this.compressed = compressed;
     }
 }

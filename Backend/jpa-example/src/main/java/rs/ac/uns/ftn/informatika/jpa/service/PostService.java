@@ -40,27 +40,21 @@ public class PostService {
         this.imageService = imageService;
     }
 
-
     @Transactional
     public PostDTO createPost(PostDTO postDTO, MultipartFile file) throws IOException {
-        // Fetch the hardcoded user with ID 2
-        User user = userService.getUserById(5L)
+        User user = userService.getUserById(1L)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Save the image and get the full Image entity
         Image image = imageService.saveImage(file);
 
-        // Create a new Post and set its fields
         Post post = new Post();
         post.setDescription(postDTO.getDescription());
         post.setCreatedTime(LocalDateTime.now());
         post.setUser(user);
-        post.setImage(image); // Set the full Image entity
+        post.setImage(image);
 
-        // Save the post to the repository
         Post savedPost = postRepository.save(post);
 
-        // Update the DTO with IDs and return
         postDTO.setId(savedPost.getId());
         postDTO.setImageId(image.getId());
         return postDTO;
