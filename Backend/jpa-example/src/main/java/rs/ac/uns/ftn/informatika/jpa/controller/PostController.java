@@ -14,6 +14,7 @@ import rs.ac.uns.ftn.informatika.jpa.service.PostService;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -75,5 +76,10 @@ public class PostController {
     public ResponseEntity<Post> addComment(@RequestBody WriteCommentDTO comment) {
         postService.addCommentToPost(comment);
         return ResponseEntity.noContent().build();
+    }
+    @PutMapping("/like/{postId}")
+    public ResponseEntity<Map<String, String>> toggleLike(@PathVariable Long postId, @RequestParam Long userId) {
+        //String response = postService.toggleLike(postId, userId);
+        return postService.toggleLike(postId, userId);
     }
 }

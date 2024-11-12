@@ -18,3 +18,5 @@ INSERT INTO comments (id, text, created_time, user_id, post_id) VALUES
     (2, 'Thanks! The view was breathtaking.', '2024-11-11 17:10:00', -1, 1), -- John Doe odgovara na komentar
     (3, 'Looks like a great place to visit!', '2024-11-12 10:00:00', -1, 2), -- John Doe komentariše na post #2
     (4, 'I love exploring old cities too!', '2024-11-13 15:00:00', -2, 3); -- Jane Doe komentariše na post #3
+
+SELECT setval('comments_id_seq', (SELECT MAX(id) FROM comments) + 1);

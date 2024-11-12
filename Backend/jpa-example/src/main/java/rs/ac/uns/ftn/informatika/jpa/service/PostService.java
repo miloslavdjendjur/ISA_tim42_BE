@@ -2,6 +2,7 @@ package rs.ac.uns.ftn.informatika.jpa.service;
 
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
@@ -17,9 +18,7 @@ import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class PostService {
@@ -91,11 +90,42 @@ public class PostService {
                 .orElseThrow(() -> new RuntimeException("Post not found with id: " + commentDTO.getPostId()));
         User user = userService.getUserById(commentDTO.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Hibernate.initialize(post.getComments());
+        //Hibernate.initialize(post.getComments());
         Comment comment = new Comment(commentDTO.getText(), commentDTO.getCreatedTime(), user, post);
-        post.getComments().add(comment); // Dodaj komentar u listu komentara posta
+        post.getComments().add(comment);
 
-        postRepository.save(post); // Sačuvaj post (Hibernate će sačuvati komentar zbog CascadeType.ALL)
+        postRepository.save(post);
     }
+    /*@Transactional
+    public Post likePost(Long postId, Long userId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
+        User user = userService.getUserById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        if (!post.getLikes().contains(user)) {
+            post.getLikes().add(user);
+            postRepository.save(post);
+        }
+        return post;
+    }*/
+    @Transactional
+    public ResponseEntity<Map<String, String>> toggleLike(Long postId, Long userId) {
+        Map<String, String> response = new HashMap<>();
+        Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
+        User user = userService.getUserById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (post.getLikes().contains(user)) {
+            response.put("message", "Already liked");
+        } else {
+            post.getLikes().add(user);
+            postRepository.save(post);
+            response.put("message", "Post liked");
+        }
+        response.put("likesCount", String.valueOf(post.getLikes().size()));
+        return ResponseEntity.ok(response);
+    }
+
 
 }
