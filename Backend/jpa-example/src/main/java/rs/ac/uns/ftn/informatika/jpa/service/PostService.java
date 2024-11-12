@@ -3,16 +3,19 @@ package rs.ac.uns.ftn.informatika.jpa.service;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
 import rs.ac.uns.ftn.informatika.jpa.mapper.CommentDTOMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.Comment;
+import rs.ac.uns.ftn.informatika.jpa.model.Image;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,29 +26,43 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserService userService;
+    private final ImageService imageService;
     private final LocationService locationService;
     private final CommentDTOMapper commentDTOMapper;
 
     @Autowired
-    public PostService(PostRepository postRepository, UserService userService, LocationService locationService,CommentDTOMapper commentDTOMapper) {
+    public PostService(PostRepository postRepository, UserService userService, LocationService locationService,
+                       CommentDTOMapper commentDTOMapper, ImageService imageService) {
         this.postRepository = postRepository;
         this.userService = userService;
         this.locationService = locationService;
         this.commentDTOMapper = commentDTOMapper;
+        this.imageService = imageService;
     }
 
-    public PostDTO createPost(PostDTO postDTO) {
+
+    @Transactional
+    public PostDTO createPost(PostDTO postDTO, MultipartFile file) throws IOException {
+        // Fetch the hardcoded user with ID 2
+        User user = userService.getUserById(5L)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Save the image and get the full Image entity
+        Image image = imageService.saveImage(file);
+
+        // Create a new Post and set its fields
         Post post = new Post();
         post.setDescription(postDTO.getDescription());
-        post.setImagePath(postDTO.getImagePath());
         post.setCreatedTime(LocalDateTime.now());
-
-        User user = userService.getUserById(postDTO.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
         post.setUser(user);
+        post.setImage(image); // Set the full Image entity
 
-        post = postRepository.save(post);
-        postDTO.setId(post.getId());
+        // Save the post to the repository
+        Post savedPost = postRepository.save(post);
+
+        // Update the DTO with IDs and return
+        postDTO.setId(savedPost.getId());
+        postDTO.setImageId(image.getId());
         return postDTO;
     }
 
@@ -71,7 +88,7 @@ public class PostService {
             PostViewDTO postDTO = new PostViewDTO(
                     post.getId(),
                     post.getDescription(),
-                    post.getImagePath(),
+                    post.getImage().getPath(),
                     post.getUser().getId(),
                     post.getLikes().size(),
                     commentDTOs

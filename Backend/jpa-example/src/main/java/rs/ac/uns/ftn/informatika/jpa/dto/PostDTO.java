@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 public class PostDTO {
     private Long id;
     private String description;
-    private String imagePath;
+    private Long imageId;
     private LocalDateTime createdTime;
     private Long userId;
     private Long locationId;
@@ -28,12 +28,12 @@ public class PostDTO {
         this.description = description;
     }
 
-    public String getImagePath() {
-        return imagePath;
+    public Long getImageId() {
+        return imageId;
     }
 
-    public void setImagePath(String imagePath) {
-        this.imagePath = imagePath;
+    public void setImageId(Long imageId) {
+        this.imageId = imageId;
     }
 
     public LocalDateTime getCreatedTime() {

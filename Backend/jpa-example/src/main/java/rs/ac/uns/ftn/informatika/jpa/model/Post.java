@@ -18,8 +18,9 @@ public class Post {
     @Column(nullable = false, length = 500)
     private String description;
 
-    @Column(nullable = false)
-    private String imagePath;
+    @ManyToOne
+    @JoinColumn(name = "image_id")
+    private Image image;
 
     @Column(nullable = false)
     private LocalDateTime createdTime = LocalDateTime.now();
@@ -48,9 +49,9 @@ public class Post {
     public Post() {
     }
 
-    public Post(String description, String imagePath, LocalDateTime createdTime, User user, Location location) {
+    public Post(String description, Image image, LocalDateTime createdTime, User user, Location location) {
         this.description = description;
-        this.imagePath = imagePath;
+        this.image = image;
         this.createdTime = createdTime;
         this.user = user;
         this.location = location;
@@ -72,12 +73,12 @@ public class Post {
         this.description = description;
     }
 
-    public String getImagePath() {
-        return imagePath;
+    public Image getImage() {
+        return image;
     }
 
-    public void setImagePath(String imagePath) {
-        this.imagePath = imagePath;
+    public void setImage(Image image) {
+        this.image = image;
     }
 
     public LocalDateTime getCreatedTime() {

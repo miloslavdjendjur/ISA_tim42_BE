@@ -32,22 +32,17 @@ public class PostController {
     @PostMapping
     public ResponseEntity<PostDTO> createPost(
             @RequestParam("description") String description,
-            @RequestParam("userId") Long userId,
-            @RequestParam("file") MultipartFile file) throws IOException {
+            @RequestParam("file") MultipartFile file) {
+        try {
+            PostDTO postDTO = new PostDTO();
+            postDTO.setDescription(description);
 
-        // Use ImageService to handle image storage
-        String imagePath = imageService.saveImage(file);
+            PostDTO createdPost = postService.createPost(postDTO, file);
 
-        // Create a new PostDTO
-        PostDTO postDTO = new PostDTO();
-        postDTO.setDescription(description);
-        postDTO.setImagePath(imagePath);
-        postDTO.setUserId(userId);
-
-        // Save post with PostService
-        PostDTO createdPost = postService.createPost(postDTO);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 
