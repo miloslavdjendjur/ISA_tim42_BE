@@ -4,19 +4,21 @@ import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.mapper.CommentDTOMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.Comment;
-import rs.ac.uns.ftn.informatika.jpa.model.Location;
+import rs.ac.uns.ftn.informatika.jpa.model.Image;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.repository.CommentRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -25,27 +27,42 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserService userService;
+    private final ImageService imageService;
     private final LocationService locationService;
     private final CommentDTOMapper commentDTOMapper;
     private final CommentRepository commentRepository;
 
     @Autowired
-    public PostService(PostRepository postRepository, UserService userService, LocationService locationService, CommentDTOMapper commentDTOMapper, CommentRepository commentRepository) {
+    public PostService(PostRepository postRepository, UserService userService, LocationService locationService,
+                       CommentDTOMapper commentDTOMapper, ImageService imageService, CommentRepository commentRepository) {
         this.postRepository = postRepository;
         this.userService = userService;
         this.locationService = locationService;
         this.commentDTOMapper = commentDTOMapper;
+        this.imageService = imageService;
         this.commentRepository = commentRepository;
     }
 
-    public Post createPost(String description, String imagePath, double latitude, double longitude, String address, Long userId) {
-        User user = userService.getUserById(userId)
+    @Transactional
+    public PostDTO createPost(PostDTO postDTO, MultipartFile file) throws IOException {
+        User user = userService.getUserById(1L)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Location location = locationService.createLocation(latitude, longitude, address);
 
-        Post post = new Post(description, imagePath, LocalDateTime.now(), user, location);
-        return postRepository.save(post);
+        Image image = imageService.saveImage(file);
+
+        Post post = new Post();
+        post.setDescription(postDTO.getDescription());
+        post.setCreatedTime(LocalDateTime.now());
+        post.setUser(user);
+        post.setImage(image);
+
+        Post savedPost = postRepository.save(post);
+
+        postDTO.setId(savedPost.getId());
+        postDTO.setImageId(image.getId());
+        return postDTO;
     }
+
 
     public Optional<Post> getPostById(Long id) {
         return postRepository.findById(id);
@@ -61,7 +78,7 @@ public class PostService {
             PostViewDTO postDTO = new PostViewDTO(
                     post.getId(),
                     post.getDescription(),
-                    post.getImagePath(),
+                    post.getImage().getPath(),
                     post.getUser().getId(),
                     post.getLikes().size()
             );

@@ -13,6 +13,7 @@ INSERT INTO posts (id, description, image_path, created_time, user_id, location_
     (1, 'Beautiful sunset at the beach', '/images/sunset.jpg', '2024-11-11 17:00:00', -1, 1),
     (2, 'Amazing view from the mountain top', '/images/mountain.jpg', '2024-11-12 09:30:00', -2, 2),
     (3, 'Exploring the old city streets', '/images/city.jpg', '2024-11-13 14:45:00', -1, 1);
+
 INSERT INTO comments (id, text, created_time, user_id, post_id) VALUES
     (1, 'Amazing photo, really beautiful!', '2024-11-11 17:05:00', -2, 1), -- Jane Doe komentariše na post #1
     (2, 'Thanks! The view was breathtaking.', '2024-11-11 17:10:00', -1, 1), -- John Doe odgovara na komentar

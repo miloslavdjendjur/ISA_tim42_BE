@@ -5,10 +5,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
+import rs.ac.uns.ftn.informatika.jpa.service.ImageService;
 import rs.ac.uns.ftn.informatika.jpa.service.PostService;
 
 import java.io.File;
@@ -22,33 +24,30 @@ import java.util.Optional;
 public class PostController {
 
     private final PostService postService;
+    private final ImageService imageService;
 
     @Autowired
-    public PostController(PostService postService) {
+    public PostController(PostService postService, ImageService imageService) {
         this.postService = postService;
+        this.imageService = imageService;
     }
 
     @PostMapping
-    public ResponseEntity<Post> createPost(@RequestParam("description") String description,
-                                           @RequestParam("latitude") double latitude,
-                                           @RequestParam("longitude") double longitude,
-                                           @RequestParam("address") String address,
-                                           @RequestParam("file") MultipartFile file,
-                                           @RequestParam("userId") Long userId) {
+    public ResponseEntity<PostDTO> createPost(
+            @RequestParam("description") String description,
+            @RequestParam("file") MultipartFile file) {
         try {
-            // Save the image file
-            String uploadDir = "uploads/images/";
-            String filePath = uploadDir + file.getOriginalFilename();
-            File destinationFile = new File(filePath);
-            file.transferTo(destinationFile);
+            PostDTO postDTO = new PostDTO();
+            postDTO.setDescription(description);
 
-            // Create post
-            Post post = postService.createPost(description, filePath, latitude, longitude, address, userId);
-            return new ResponseEntity<>(post, HttpStatus.CREATED);
+            PostDTO createdPost = postService.createPost(postDTO, file);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
         } catch (IOException e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Post> getPostById(@PathVariable Long id) {
