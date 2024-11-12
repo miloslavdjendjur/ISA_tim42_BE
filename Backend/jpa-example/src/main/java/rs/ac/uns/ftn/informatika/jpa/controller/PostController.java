@@ -5,7 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
+import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.service.PostService;
 
@@ -58,5 +60,20 @@ public class PostController {
     public ResponseEntity<List<PostViewDTO>> getAllPosts() {
         List<PostViewDTO> posts = postService.getAllPosts();
         return ResponseEntity.ok(posts);
+    }
+    @GetMapping("/all-comments/{id}")
+    public ResponseEntity<List<CommentDTO>> getAllComments(@PathVariable Long id){
+        List<CommentDTO> comments = postService.getPostComments(id);
+        return ResponseEntity.ok(comments);
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
+        postService.deletePost(id);
+        return ResponseEntity.noContent().build();
+    }
+    @PutMapping("/add-comment")
+    public ResponseEntity<Post> addComment(@RequestBody WriteCommentDTO comment) {
+        postService.addCommentToPost(comment);
+        return ResponseEntity.noContent().build();
     }
 }

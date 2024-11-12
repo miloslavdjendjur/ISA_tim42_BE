@@ -28,7 +28,8 @@ public class Post {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    //@ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
     private Location location;
 
@@ -114,7 +115,7 @@ public class Post {
     public void setComments(Set<Comment> comments){
         this.comments = comments;
     }
-    public List<Comment> getComments() {
-        return this.comments.stream().collect(Collectors.toList());
+    public Set<Comment> getComments() {
+        return comments;
     }
 }
