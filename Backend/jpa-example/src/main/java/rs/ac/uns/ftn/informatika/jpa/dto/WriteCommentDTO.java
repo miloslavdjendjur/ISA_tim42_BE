@@ -2,45 +2,43 @@ package rs.ac.uns.ftn.informatika.jpa.dto;
 
 import java.time.LocalDateTime;
 
-public class CommentDTO {
-    private Long id;
+public class WriteCommentDTO {
     private String text;
     private LocalDateTime createdTime;
     private Long userId;
     private Long postId;
-    private String userName;
 
-    public CommentDTO() {
-    }
+    public WriteCommentDTO() {}
 
-    public CommentDTO(Long id, String text, LocalDateTime createdTime, Long userId, Long postId,String userName) {
-        this.id = id;
+    public WriteCommentDTO(String text, LocalDateTime createdTime, Long userId, Long postId) {
         this.text = text;
         this.createdTime = createdTime;
         this.userId = userId;
         this.postId = postId;
-        this.userName = userName;
     }
-    public Long getId() {
-        return id;
-    }
-
     public String getText() {
         return text;
     }
-
+    public void setText(String text) {
+        this.text = text;
+    }
     public LocalDateTime getCreatedTime() {
         return createdTime;
     }
-
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createdTime = createdTime;
+    }
     public Long getUserId() {
         return userId;
     }
-
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
     public Long getPostId() {
         return postId;
     }
-    public String getUserName() {
-        return userName;
+    public void setPostId(Long postId) {
+        this.postId = postId;
     }
+
 }

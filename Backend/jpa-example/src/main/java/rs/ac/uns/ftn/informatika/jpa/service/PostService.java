@@ -7,11 +7,13 @@ import org.springframework.web.multipart.MultipartFile;
 import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
+import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.mapper.CommentDTOMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.Comment;
 import rs.ac.uns.ftn.informatika.jpa.model.Image;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
+import rs.ac.uns.ftn.informatika.jpa.repository.CommentRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 
 import javax.transaction.Transactional;
@@ -29,15 +31,17 @@ public class PostService {
     private final ImageService imageService;
     private final LocationService locationService;
     private final CommentDTOMapper commentDTOMapper;
+    private final CommentRepository commentRepository;
 
     @Autowired
     public PostService(PostRepository postRepository, UserService userService, LocationService locationService,
-                       CommentDTOMapper commentDTOMapper, ImageService imageService) {
+                       CommentDTOMapper commentDTOMapper, ImageService imageService, CommentRepository commentRepository) {
         this.postRepository = postRepository;
         this.userService = userService;
         this.locationService = locationService;
         this.commentDTOMapper = commentDTOMapper;
         this.imageService = imageService;
+        this.commentRepository = commentRepository;
     }
 
     @Transactional
@@ -72,23 +76,43 @@ public class PostService {
         //List<Comment> comments = new ArrayList<>();
         List<PostViewDTO> postDTOs = new ArrayList<>();
         for (Post post : posts) {
-            List<CommentDTO> commentDTOs = new ArrayList<>();
-            for (Comment comment : post.getComments()) {
-                //CommentDTO commentDTO = commentDTOMapper.fromCommentToDTO(comment);
-                CommentDTO commentDTO = new CommentDTO(comment.getId(),comment.getText(),comment.getCreatedTime(),comment.getUser().getId(),
-                        comment.getPost().getId());
-                commentDTOs.add(commentDTO);
-            }
             PostViewDTO postDTO = new PostViewDTO(
                     post.getId(),
                     post.getDescription(),
                     post.getImage().getPath(),
                     post.getUser().getId(),
-                    post.getLikes().size(),
-                    commentDTOs
+                    post.getLikes().size()
             );
             postDTOs.add(postDTO);
         }
         return postDTOs;
     }
+    @Transactional
+    public List<CommentDTO> getPostComments(Long postId){
+        Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
+        Hibernate.initialize(post.getComments());
+        List<CommentDTO> commentDTOs = new ArrayList<>();
+        for (Comment comment : post.getComments()){
+            CommentDTO commentDTO = new CommentDTO(comment.getId(),comment.getText(),comment.getCreatedTime(),comment.getUser().getId(),
+                    comment.getPost().getId(),comment.getUser().getUsername());
+            commentDTOs.add(commentDTO);
+        }
+        return commentDTOs;
+    }
+    public void deletePost(Long postId) {
+        postRepository.deleteById(postId);
+    }
+    @Transactional
+    public void addCommentToPost(WriteCommentDTO commentDTO) {
+        Post post = postRepository.findById(commentDTO.getPostId())
+                .orElseThrow(() -> new RuntimeException("Post not found with id: " + commentDTO.getPostId()));
+        User user = userService.getUserById(commentDTO.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Hibernate.initialize(post.getComments());
+        Comment comment = new Comment(commentDTO.getText(), commentDTO.getCreatedTime(), user, post);
+        post.getComments().add(comment); // Dodaj komentar u listu komentara posta
+
+        postRepository.save(post); // Sačuvaj post (Hibernate će sačuvati komentar zbog CascadeType.ALL)
+    }
+
 }
