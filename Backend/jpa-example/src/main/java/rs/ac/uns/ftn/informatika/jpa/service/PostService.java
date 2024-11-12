@@ -45,7 +45,12 @@ public class PostService {
 
     @Transactional
     public PostDTO createPost(PostDTO postDTO, MultipartFile file) throws IOException {
-        User user = userService.getUserById(1L)
+        Long userId = postDTO.getUserId();
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID must not be null");
+        }
+
+        User user = userService.getUserById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Image image = imageService.saveImage(file);
@@ -62,7 +67,6 @@ public class PostService {
         postDTO.setImageId(image.getId());
         return postDTO;
     }
-
 
     public Optional<Post> getPostById(Long id) {
         return postRepository.findById(id);

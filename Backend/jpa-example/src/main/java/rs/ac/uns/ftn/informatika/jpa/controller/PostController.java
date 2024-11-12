@@ -35,9 +35,11 @@ public class PostController {
     @PostMapping
     public ResponseEntity<PostDTO> createPost(
             @RequestParam("description") String description,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("userId") Long userId) {
         try {
             PostDTO postDTO = new PostDTO();
+            postDTO.setUserId(userId);
             postDTO.setDescription(description);
 
             PostDTO createdPost = postService.createPost(postDTO, file);
