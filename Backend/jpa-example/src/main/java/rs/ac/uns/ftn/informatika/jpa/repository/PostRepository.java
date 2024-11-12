@@ -7,4 +7,5 @@ import rs.ac.uns.ftn.informatika.jpa.model.Post;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
     // Custom query methods can go here, if needed
+    long countByUserId(Long userId);
 }

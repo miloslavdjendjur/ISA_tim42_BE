@@ -3,24 +3,30 @@ package rs.ac.uns.ftn.informatika.jpa.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
+import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.UserRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
+    public UserService(UserRepository userRepository,PostRepository postRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
 
         this.userRepository = userRepository;
+        this.postRepository = postRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
     }
@@ -88,8 +94,47 @@ public class UserService {
             return 0; // Invalid token
         }
     }
+    public List<ShowUserDTO> getAllUsers(Long adminId){
+        List<User> users = userRepository.findAll();
+        List<ShowUserDTO> showUserDTOs = new ArrayList<>();
+        for (User user : users) {
+            if(!user.getId().equals(adminId)) {
+                long postCount = postRepository.countByUserId(user.getId());
+                ShowUserDTO showUserDTO = new ShowUserDTO(
+                        user.getId(),user.getFullName(),user.getEmail(),postCount,user.getFollowersCount()
+                );
+                showUserDTOs.add(showUserDTO);
+            }
+        }
+        return showUserDTOs;
+    }
+    public List<ShowUserDTO> filterUsers(Long adminId, Optional<String> name, Optional<String> surname, Optional<String> email,
+                                         Optional<Integer> minPosts, Optional<Integer> maxPosts,
+                                         Optional<String> sortField, Optional<String> sortOrder) {
+        List<ShowUserDTO> showUserDTOs = getAllUsers(adminId);
 
+        return showUserDTOs.stream()
+                .filter(user -> name.map(n -> user.getFullName().toLowerCase().contains(n.toLowerCase())).orElse(true))
+                .filter(user -> surname.map(s -> user.getFullName().toLowerCase().contains(s.toLowerCase())).orElse(true))
+                .filter(user -> email.map(e -> user.getEmail().toLowerCase().contains(e.toLowerCase())).orElse(true))
+                .filter(user -> minPosts.map(min -> user.getPostNumber() >= min).orElse(true))
+                .filter(user -> maxPosts.map(max -> user.getPostNumber() <= max).orElse(true))
 
+                .sorted((u1, u2) -> {
+                    if (!sortField.isPresent()) return 0;
+                    int direction = sortOrder.orElse("asc").equalsIgnoreCase("asc") ? 1 : -1;
+
+                    switch (sortField.get().toLowerCase()) {
+                        case "followers":
+                            return direction * Long.compare(u1.getFollowsPeople(), u2.getFollowsPeople());
+                        case "email":
+                            return direction * u1.getEmail().compareToIgnoreCase(u2.getEmail());
+                        default:
+                            return 0;
+                    }
+                })
+                .collect(Collectors.toList());
+    }
 
     public boolean emailExists(String email) {
         return userRepository.findByEmail(email).isPresent();

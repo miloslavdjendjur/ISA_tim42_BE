@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.ac.uns.ftn.informatika.jpa.dto.FilterCriteriaDTO;
+import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.service.UserService;
 
@@ -50,5 +52,23 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/all/{id}")
+    public ResponseEntity<List<ShowUserDTO>> getAllUsers(@PathVariable Long id) {
+        List<ShowUserDTO> showUserDTOs = userService.getAllUsers(id);
+        return ResponseEntity.ok(showUserDTOs);
+    }
+    @PostMapping("/filter/{id}")
+    public ResponseEntity<List<ShowUserDTO>> filterUsers(@PathVariable Long id, @RequestBody FilterCriteriaDTO criteria) {
+
+        List<ShowUserDTO> filteredUsers = userService.filterUsers
+        (id,Optional.ofNullable(criteria.getName()),
+                Optional.ofNullable(criteria.getSurname()),
+                Optional.ofNullable(criteria.getEmail()),
+                Optional.ofNullable(criteria.getMinPosts()),
+                Optional.ofNullable(criteria.getMaxPosts()),
+                Optional.ofNullable(criteria.getSortField()),
+                Optional.ofNullable(criteria.getSortOrder()));
+        return ResponseEntity.ok(filteredUsers);
     }
 }
