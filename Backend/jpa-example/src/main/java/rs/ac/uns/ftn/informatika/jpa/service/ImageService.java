@@ -60,14 +60,21 @@ public class ImageService {
 
         for (Image image : oldImages) {
             try {
-                File originalFile = new File(image.getPath());
+                String absolutePath = new File("src/main/resources/static" + image.getPath()).getAbsolutePath();
+                File originalFile = new File(absolutePath);
                 BufferedImage originalImage = ImageIO.read(originalFile);
+
+                if (originalImage == null) {
+                    System.err.println("Failed to read image: " + absolutePath);
+                    continue;
+                }
 
                 BufferedImage compressedImage = Scalr.resize(originalImage, Scalr.Method.QUALITY, 800, 600);
 
-                File compressedFile = new File(image.getPath().replace(".jpg", "_compressed.jpg"));
-                ImageIO.write(compressedImage, "jpg", compressedFile);
-                System.out.println("Compressed image with path: " + image.getPath());
+                String compressedPath = absolutePath.replace(".png", "_compressed.png");
+                File compressedFile = new File(compressedPath);
+                ImageIO.write(compressedImage, "png", compressedFile);
+                System.out.println("Compressed image saved to: " + compressedPath);
 
             } catch (IOException e) {
                 System.err.println("Error compressing image: " + image.getPath());
@@ -75,5 +82,6 @@ public class ImageService {
             }
         }
     }
+
 }
 

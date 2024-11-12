@@ -5,6 +5,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import rs.ac.uns.ftn.informatika.jpa.service.ImageService;
 
+import javax.annotation.PostConstruct;
+
 @Component
 @EnableScheduling
 public class ImageCompressionScheduler {
@@ -15,9 +17,14 @@ public class ImageCompressionScheduler {
         this.imageService = imageService;
     }
 
-    // Pokreće se svaki dan u ponoć
     @Scheduled(cron = "0 0 0 * * ?")
     public void compressOldImages() {
         imageService.compressImagesOlderThanOneMonth();
+    }
+
+    @PostConstruct
+    public void compressOldImagesAtStartup() {
+        imageService.compressImagesOlderThanOneMonth();
+        System.out.println("Image compression triggered at application startup.");
     }
 }

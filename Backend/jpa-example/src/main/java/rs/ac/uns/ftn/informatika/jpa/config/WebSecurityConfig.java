@@ -54,7 +54,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/api/auth/register", "/api/auth/login", "/api/auth/activate","/api/posts/all",
                         "/api/posts/all-comments/{id}","/api/posts/{id}","/api/posts/add-comment",
-                        "/api/posts/like/{postId}","/api/posts","/api/users/all/{id}","/api/users/filter/{id}").permitAll()
+                        "/api/posts/like/{postId}","/api/posts","/api/users/all/{id}","/api/users/filter/{id}", "/api/images/**").permitAll()
                 .anyRequest().authenticated();
     }
     /*@Bean
