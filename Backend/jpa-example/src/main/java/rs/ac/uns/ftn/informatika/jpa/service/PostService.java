@@ -80,7 +80,8 @@ public class PostService {
                     post.getDescription(),
                     post.getImage().getPath(),
                     post.getUser().getId(),
-                    post.getLikes().size()
+                    post.getLikes().size(),
+                    post.getCreatedTime()
             );
             postDTOs.add(postDTO);
         }
