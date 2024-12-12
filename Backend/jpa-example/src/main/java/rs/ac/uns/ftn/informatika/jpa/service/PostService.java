@@ -17,7 +17,8 @@ import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.*;import java.util.stream.Collectors;
+
 
 @Service
 public class PostService {
@@ -26,18 +27,18 @@ public class PostService {
     private final UserService userService;
     private final ImageService imageService;
     private final LocationService locationService;
+    private final CommentService commentService;
     private final CommentDTOMapper commentDTOMapper;
-    private final CommentRepository commentRepository;
 
     @Autowired
     public PostService(PostRepository postRepository, UserService userService, LocationService locationService,
-                       CommentDTOMapper commentDTOMapper, ImageService imageService, CommentRepository commentRepository) {
+                       CommentDTOMapper commentDTOMapper, ImageService imageService, CommentService commentService) {
         this.postRepository = postRepository;
         this.userService = userService;
         this.locationService = locationService;
         this.commentDTOMapper = commentDTOMapper;
         this.imageService = imageService;
-        this.commentRepository = commentRepository;
+        this.commentService = commentService;
     }
 
     @org.springframework.transaction.annotation.Transactional
@@ -96,17 +97,23 @@ public class PostService {
         }
         return postDTOs;
     }
+
     @Transactional
-    public List<CommentDTO> getPostComments(Long postId){
-        Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
+    public List<CommentDTO> getPostComments(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
         Hibernate.initialize(post.getComments());
-        List<CommentDTO> commentDTOs = new ArrayList<>();
-        for (Comment comment : post.getComments()){
-            CommentDTO commentDTO = new CommentDTO(comment.getId(),comment.getText(),comment.getCreatedTime(),comment.getUser().getId(),
-                    comment.getPost().getId(),comment.getUser().getUsername());
-            commentDTOs.add(commentDTO);
-        }
-        return commentDTOs;
+
+        return post.getComments().stream()
+                .sorted((c1, c2) -> c2.getCreatedTime().compareTo(c1.getCreatedTime())) // Sort by newest
+                .map(comment -> new CommentDTO(
+                        comment.getId(),
+                        comment.getText(),
+                        comment.getCreatedTime(),
+                        comment.getUser().getId(),
+                        comment.getPost().getId(),
+                        comment.getUser().getUsername()))
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -126,15 +133,7 @@ public class PostService {
 
     @Transactional
     public void addCommentToPost(WriteCommentDTO commentDTO) {
-        Post post = postRepository.findById(commentDTO.getPostId())
-                .orElseThrow(() -> new RuntimeException("Post not found with id: " + commentDTO.getPostId()));
-        User user = userService.getUserById(commentDTO.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        //Hibernate.initialize(post.getComments());
-        Comment comment = new Comment(commentDTO.getText(), commentDTO.getCreatedTime(), user, post);
-        post.getComments().add(comment);
-
-        postRepository.save(post);
+        commentService.addComment(commentDTO.getPostId(), commentDTO.getUserId(), commentDTO.getText());
     }
 
     @Transactional

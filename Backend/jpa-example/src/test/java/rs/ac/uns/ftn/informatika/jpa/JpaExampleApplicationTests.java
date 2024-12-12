@@ -30,7 +30,7 @@ public class JpaExampleApplicationTests {
 		Long postId = 3L;
 		Long userId1 = 2L;
 		Long userId2 = 3L;
-		// Podsetnik: ovaj post i ovi useri moraju da postoje u bazi da bi radilo. LOGICNO!
+		// Podsetnik: ovi ajdijevi moraju da postoje u bazi da bi radilo. LOGICNO!
 
 		ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -43,7 +43,6 @@ public class JpaExampleApplicationTests {
 		executorService.shutdown();
 		executorService.awaitTermination(10, TimeUnit.SECONDS);
 
-		// Assert final like count
 		Post post = postService.getPostById(postId)
 				.orElseThrow(() -> new RuntimeException("Post with ID " + postId + " not found"));
 		assert post.getLikes().size() == 2;

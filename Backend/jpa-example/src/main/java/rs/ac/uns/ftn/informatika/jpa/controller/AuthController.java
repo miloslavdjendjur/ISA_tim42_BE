@@ -10,7 +10,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 import rs.ac.uns.ftn.informatika.jpa.dto.LoginRequest;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
-import rs.ac.uns.ftn.informatika.jpa.service.CustomUserDetails;
+import rs.ac.uns.ftn.informatika.jpa.model.CustomUserDetails;
 import rs.ac.uns.ftn.informatika.jpa.service.UserService;
 import rs.ac.uns.ftn.informatika.jpa.util.JwtUtil;
 

@@ -1,4 +1,4 @@
-package rs.ac.uns.ftn.informatika.jpa.service;
+package rs.ac.uns.ftn.informatika.jpa.model;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

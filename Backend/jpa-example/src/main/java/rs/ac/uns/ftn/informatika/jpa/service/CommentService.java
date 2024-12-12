@@ -16,24 +16,37 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final UserService userService;
-    private final PostService postService;
+    private final PostHelper postHelper;
 
     @Autowired
-    public CommentService(CommentRepository commentRepository, UserService userService, PostService postService) {
+    public CommentService(CommentRepository commentRepository, UserService userService, PostHelper postHelper) {
         this.commentRepository = commentRepository;
         this.userService = userService;
-        this.postService = postService;
+        this.postHelper = postHelper;
     }
 
     public Comment addComment(Long postId, Long userId, String text) {
         User user = userService.getUserById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Post post = postService.getPostById(postId)
+        Post post = postHelper.getPostById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        // Check if the user follows the post owner
+        if (!post.getUser().getFollowers().contains(user)) {
+            throw new RuntimeException("You must follow the post's owner to comment.");
+        }
+
+        // Check if the user exceeded the comment limit
+        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
+        long commentCount = commentRepository.countByUserIdAndCreatedTimeAfter(userId, oneHourAgo);
+        if (commentCount >= 60) {
+            throw new RuntimeException("You can only comment 60 times per hour.");
+        }
 
         Comment comment = new Comment(text, LocalDateTime.now(), user, post);
         return commentRepository.save(comment);
     }
+
 
     public Optional<Comment> getCommentById(Long id) {
         return commentRepository.findById(id);
