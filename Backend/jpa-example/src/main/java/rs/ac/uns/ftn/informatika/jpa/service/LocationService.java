@@ -36,12 +36,16 @@ public class LocationService {
         return locationRepository.findAll();
     }
 
+    @CacheEvict(value = "locations", key = "#locationId")
+    public void deleteLocation(Long locationId) {
+        locationRepository.deleteById(locationId);
+        System.out.println("Location with ID " + locationId + " has been deleted and removed from the cache.");
+    }
+
     @CacheEvict(value = "locations", allEntries = true)
     public void evictAllCaches() {
         System.out.println("All entries in the 'locations' cache have been cleared.");
         // CacheEvict ima logiku za sve ovo buk
-        // Ovo treba iskoriti kod metoda za deletovanje npr.
+        // Ovo CacheEvict treba iskoriti kod metoda za deletovanje npr.
     }
-
-
 }

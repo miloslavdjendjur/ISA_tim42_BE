@@ -106,9 +106,22 @@ public class PostService {
         }
         return commentDTOs;
     }
+
+    @Transactional
     public void deletePost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        // Fetch and delete the associated location
+        Location location = post.getLocation();
+        if (location != null) {
+            locationService.deleteLocation(location.getId()); // Trigger location deletion and cache eviction
+        }
+
+        // Delete the post itself
         postRepository.deleteById(postId);
     }
+
     @Transactional
     public void addCommentToPost(WriteCommentDTO commentDTO) {
         Post post = postRepository.findById(commentDTO.getPostId())
