@@ -6,20 +6,25 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
+import rs.ac.uns.ftn.informatika.jpa.model.Image;
+import rs.ac.uns.ftn.informatika.jpa.model.Location;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
-import rs.ac.uns.ftn.informatika.jpa.service.ImageService;
-import rs.ac.uns.ftn.informatika.jpa.service.PostService;
+import rs.ac.uns.ftn.informatika.jpa.model.User;
+import rs.ac.uns.ftn.informatika.jpa.service.*;
 import org.springframework.core.io.Resource;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,8 +36,6 @@ public class PostController {
     private final PostService postService;
     private final ImageService imageService;
 
-
-
     @Autowired
     public PostController(PostService postService, ImageService imageService) {
         this.postService = postService;
@@ -43,19 +46,23 @@ public class PostController {
     public ResponseEntity<PostDTO> createPost(
             @RequestParam("description") String description,
             @RequestParam("file") MultipartFile file,
-            @RequestParam("userId") Long userId) {
+            @RequestParam("userId") Long userId,
+            @RequestParam("latitude") Double latitude,
+            @RequestParam("longitude") Double longitude,
+            @RequestParam("address") String address) {
         try {
             PostDTO postDTO = new PostDTO();
             postDTO.setUserId(userId);
             postDTO.setDescription(description);
 
-            PostDTO createdPost = postService.createPost(postDTO, file);
+            PostDTO createdPost = postService.createPost(postDTO, file, latitude, longitude, address);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
 
     @Value("${app.image.upload-dir}")

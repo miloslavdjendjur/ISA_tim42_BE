@@ -10,10 +10,7 @@ import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.mapper.CommentDTOMapper;
-import rs.ac.uns.ftn.informatika.jpa.model.Comment;
-import rs.ac.uns.ftn.informatika.jpa.model.Image;
-import rs.ac.uns.ftn.informatika.jpa.model.Post;
-import rs.ac.uns.ftn.informatika.jpa.model.User;
+import rs.ac.uns.ftn.informatika.jpa.model.*;
 import rs.ac.uns.ftn.informatika.jpa.repository.CommentRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 
@@ -43,8 +40,8 @@ public class PostService {
         this.commentRepository = commentRepository;
     }
 
-    @Transactional
-    public PostDTO createPost(PostDTO postDTO, MultipartFile file) throws IOException {
+    @org.springframework.transaction.annotation.Transactional
+    public PostDTO createPost(PostDTO postDTO, MultipartFile file, Double latitude, Double longitude, String address) throws IOException {
         Long userId = postDTO.getUserId();
         if (userId == null) {
             throw new IllegalArgumentException("User ID must not be null");
@@ -55,11 +52,16 @@ public class PostService {
 
         Image image = imageService.saveImage(file);
 
+        // Create or fetch location
+        Location location = locationService.createLocation(latitude, longitude, address);
+
+        // Create post
         Post post = new Post();
         post.setDescription(postDTO.getDescription());
         post.setCreatedTime(LocalDateTime.now());
         post.setUser(user);
         post.setImage(image);
+        post.setLocation(location); // Associate the location with the post
 
         Post savedPost = postRepository.save(post);
 
@@ -67,6 +69,7 @@ public class PostService {
         postDTO.setImageId(image.getId());
         return postDTO;
     }
+
 
     public Optional<Post> getPostById(Long id) {
         return postRepository.findById(id);
