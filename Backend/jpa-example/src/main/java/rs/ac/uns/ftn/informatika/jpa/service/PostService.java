@@ -70,9 +70,11 @@ public class PostService {
         return postDTO;
     }
 
-
+    @Transactional
     public Optional<Post> getPostById(Long id) {
-        return postRepository.findById(id);
+        Optional<Post> post = postRepository.findById(id);
+        post.ifPresent(p -> Hibernate.initialize(p.getLikes())); // Ensure likes are initialized
+        return post;
     }
 
     @Transactional
@@ -134,36 +136,27 @@ public class PostService {
 
         postRepository.save(post);
     }
-    /*@Transactional
-    public Post likePost(Long postId, Long userId) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
-        User user = userService.getUserById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        if (!post.getLikes().contains(user)) {
-            post.getLikes().add(user);
-            postRepository.save(post);
-        }
-        return post;
-    }*/
     @Transactional
     public ResponseEntity<Map<String, String>> toggleLike(Long postId, Long userId) {
         Map<String, String> response = new HashMap<>();
-        Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
         User user = userService.getUserById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (post.getLikes().contains(user)) {
-            response.put("message", "Already liked");
-        } else {
-            post.getLikes().add(user);
-            postRepository.save(post);
-            response.put("message", "Post liked");
+        synchronized (this) {
+            if (post.getLikes().contains(user)) {
+                response.put("message", "Already liked");
+            } else {
+                post.getLikes().add(user);
+                postRepository.save(post);
+                response.put("message", "Post liked");
+            }
+            response.put("likesCount", String.valueOf(post.getLikes().size()));
         }
-        response.put("likesCount", String.valueOf(post.getLikes().size()));
+
         return ResponseEntity.ok(response);
     }
-
-
 }
