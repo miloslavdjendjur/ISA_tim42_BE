@@ -29,3 +29,5 @@ INSERT INTO comments (id, text, created_time, user_id, post_id) VALUES
 
 -- Ažuriranje sekvence za komentare
 SELECT setval('comments_id_seq', (SELECT MAX(id) FROM comments) + 1);
+SELECT setval('images_id_seq', (SELECT MAX(id) FROM images));
+SELECT setval('posts_id_seq', (SELECT MAX(id) FROM posts));
