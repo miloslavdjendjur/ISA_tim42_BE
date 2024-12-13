@@ -35,4 +35,11 @@ public class LocationController {
     public List<Location> getAllLocations() {
         return locationService.getAllLocations();
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Location> getLocationById(@PathVariable Long id) {
+        Optional<Location> location = locationService.getLocationById(id);
+        return location.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
 }

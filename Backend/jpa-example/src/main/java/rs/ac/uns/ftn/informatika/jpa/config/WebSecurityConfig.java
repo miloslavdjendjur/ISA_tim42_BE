@@ -53,8 +53,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/api/auth/register", "/api/auth/login", "/api/auth/activate","/api/posts/all",
-                        "/api/posts/all-comments/{id}","/api/posts/{id}","/api/posts/add-comment",
-                        "/api/posts/like/{postId}","/api/posts","/api/users/all/{id}","/api/users/filter/{id}", "/images/**").permitAll()
+                        "/api/posts/all-comments/{id}","/api/posts/{id}","/api/posts/add-comment", "/api/locations/", "/api/locations/{id}",
+                        "/api/posts/like/{postId}","/api/posts","/api/users/all/{id}","/api/users/filter/{id}", "/images/**", "/api/users/{id}", "/api/users/show/{id}").permitAll()
                 .anyRequest().authenticated();
     }
 

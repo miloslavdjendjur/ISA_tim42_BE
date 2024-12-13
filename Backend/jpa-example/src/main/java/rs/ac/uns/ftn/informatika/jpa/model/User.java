@@ -144,4 +144,9 @@ public class User {
     public boolean getActive() { return this.isActive; }
 
     public void setVerificationToken(String token) { this.verificationToken = token; }
+
+    public Set<User> getFollowers() {
+        return followers;
+    }
+
 }

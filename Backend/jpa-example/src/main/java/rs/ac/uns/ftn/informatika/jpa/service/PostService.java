@@ -10,17 +10,15 @@ import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
 import rs.ac.uns.ftn.informatika.jpa.mapper.CommentDTOMapper;
-import rs.ac.uns.ftn.informatika.jpa.model.Comment;
-import rs.ac.uns.ftn.informatika.jpa.model.Image;
-import rs.ac.uns.ftn.informatika.jpa.model.Post;
-import rs.ac.uns.ftn.informatika.jpa.model.User;
+import rs.ac.uns.ftn.informatika.jpa.model.*;
 import rs.ac.uns.ftn.informatika.jpa.repository.CommentRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.*;import java.util.stream.Collectors;
+
 
 @Service
 public class PostService {
@@ -29,22 +27,22 @@ public class PostService {
     private final UserService userService;
     private final ImageService imageService;
     private final LocationService locationService;
+    private final CommentService commentService;
     private final CommentDTOMapper commentDTOMapper;
-    private final CommentRepository commentRepository;
 
     @Autowired
     public PostService(PostRepository postRepository, UserService userService, LocationService locationService,
-                       CommentDTOMapper commentDTOMapper, ImageService imageService, CommentRepository commentRepository) {
+                       CommentDTOMapper commentDTOMapper, ImageService imageService, CommentService commentService) {
         this.postRepository = postRepository;
         this.userService = userService;
         this.locationService = locationService;
         this.commentDTOMapper = commentDTOMapper;
         this.imageService = imageService;
-        this.commentRepository = commentRepository;
+        this.commentService = commentService;
     }
 
-    @Transactional
-    public PostDTO createPost(PostDTO postDTO, MultipartFile file) throws IOException {
+    @org.springframework.transaction.annotation.Transactional
+    public PostDTO createPost(PostDTO postDTO, MultipartFile file, Double latitude, Double longitude, String address) throws IOException {
         Long userId = postDTO.getUserId();
         if (userId == null) {
             throw new IllegalArgumentException("User ID must not be null");
@@ -55,11 +53,16 @@ public class PostService {
 
         Image image = imageService.saveImage(file);
 
+        // Create or fetch location
+        Location location = locationService.createLocation(latitude, longitude, address);
+
+        // Create post
         Post post = new Post();
         post.setDescription(postDTO.getDescription());
         post.setCreatedTime(LocalDateTime.now());
         post.setUser(user);
         post.setImage(image);
+        post.setLocation(location); // Associate the location with the post
 
         Post savedPost = postRepository.save(post);
 
@@ -68,8 +71,11 @@ public class PostService {
         return postDTO;
     }
 
+    @Transactional
     public Optional<Post> getPostById(Long id) {
-        return postRepository.findById(id);
+        Optional<Post> post = postRepository.findById(id);
+        post.ifPresent(p -> Hibernate.initialize(p.getLikes())); // Ensure likes are initialized
+        return post;
     }
 
     @Transactional
@@ -91,63 +97,65 @@ public class PostService {
         }
         return postDTOs;
     }
+
     @Transactional
-    public List<CommentDTO> getPostComments(Long postId){
-        Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
+    public List<CommentDTO> getPostComments(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
         Hibernate.initialize(post.getComments());
-        List<CommentDTO> commentDTOs = new ArrayList<>();
-        for (Comment comment : post.getComments()){
-            CommentDTO commentDTO = new CommentDTO(comment.getId(),comment.getText(),comment.getCreatedTime(),comment.getUser().getId(),
-                    comment.getPost().getId(),comment.getUser().getUsername());
-            commentDTOs.add(commentDTO);
-        }
-        return commentDTOs;
+
+        return post.getComments().stream()
+                .sorted((c1, c2) -> c2.getCreatedTime().compareTo(c1.getCreatedTime())) // Sort by newest
+                .map(comment -> new CommentDTO(
+                        comment.getId(),
+                        comment.getText(),
+                        comment.getCreatedTime(),
+                        comment.getUser().getId(),
+                        comment.getPost().getId(),
+                        comment.getUser().getUsername()))
+                .collect(Collectors.toList());
     }
+
+    @Transactional
     public void deletePost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        // Fetch and delete the associated location
+        Location location = post.getLocation();
+        if (location != null) {
+            locationService.deleteLocation(location.getId()); // Trigger location deletion and cache eviction
+        }
+
+        // Delete the post itself
         postRepository.deleteById(postId);
     }
+
     @Transactional
     public void addCommentToPost(WriteCommentDTO commentDTO) {
-        Post post = postRepository.findById(commentDTO.getPostId())
-                .orElseThrow(() -> new RuntimeException("Post not found with id: " + commentDTO.getPostId()));
-        User user = userService.getUserById(commentDTO.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        //Hibernate.initialize(post.getComments());
-        Comment comment = new Comment(commentDTO.getText(), commentDTO.getCreatedTime(), user, post);
-        post.getComments().add(comment);
-
-        postRepository.save(post);
+        commentService.addComment(commentDTO.getPostId(), commentDTO.getUserId(), commentDTO.getText());
     }
-    /*@Transactional
-    public Post likePost(Long postId, Long userId) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
-        User user = userService.getUserById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        if (!post.getLikes().contains(user)) {
-            post.getLikes().add(user);
-            postRepository.save(post);
-        }
-        return post;
-    }*/
     @Transactional
     public ResponseEntity<Map<String, String>> toggleLike(Long postId, Long userId) {
         Map<String, String> response = new HashMap<>();
-        Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
         User user = userService.getUserById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (post.getLikes().contains(user)) {
-            response.put("message", "Already liked");
-        } else {
-            post.getLikes().add(user);
-            postRepository.save(post);
-            response.put("message", "Post liked");
+        synchronized (this) {
+            if (post.getLikes().contains(user)) {
+                response.put("message", "Already liked");
+            } else {
+                post.getLikes().add(user);
+                postRepository.save(post);
+                response.put("message", "Post liked");
+            }
+            response.put("likesCount", String.valueOf(post.getLikes().size()));
         }
-        response.put("likesCount", String.valueOf(post.getLikes().size()));
+
         return ResponseEntity.ok(response);
     }
-
-
 }

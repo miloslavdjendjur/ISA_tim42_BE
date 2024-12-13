@@ -163,6 +163,16 @@ public class UserService {
         if (!canFollow(userThatIsFollowing)) {
             throw new IllegalStateException("Premasili ste limit od 50 pracenja po minuti. Pokusajte ponovo kasnije.");
         }
+    public Optional<ShowUserDTO> getShowUserById(Long id) {
+        return userRepository.findById(id)
+                .map(user -> new ShowUserDTO(
+                        user.getId(),
+                        user.getFullName(),
+                        user.getEmail(),
+                        postRepository.countByUserId(user.getId()), // Count the number of posts
+                        user.getFollowersCount() // Count the number of followers
+                ));
+    }
 
         Optional<User> followUserOpt = userRepository.findById(userToFollow);
         Optional<User> userWhoFollowsOpt = userRepository.findById(userThatIsFollowing);
