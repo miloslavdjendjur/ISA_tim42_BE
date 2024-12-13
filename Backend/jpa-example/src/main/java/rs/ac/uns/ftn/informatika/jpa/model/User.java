@@ -63,10 +63,18 @@ public class User {
     @Column(nullable = false)
     private boolean activated = false;
 
+    @Version
+    private Integer version;
+
     public enum Role {
         UNAUTHENTICATED, REGISTERED, ADMIN
     }
-
+    public Set<User> getFollowers() {
+        return followers;
+    }
+    public void setFollowers(Set<User> followers) {
+        this.followers = followers;
+    }
     public Long getId() {
         return id;
     }

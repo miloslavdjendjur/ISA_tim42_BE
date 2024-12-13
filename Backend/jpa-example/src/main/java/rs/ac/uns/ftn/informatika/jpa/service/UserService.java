@@ -1,6 +1,7 @@
 package rs.ac.uns.ftn.informatika.jpa.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
@@ -10,8 +11,11 @@ import rs.ac.uns.ftn.informatika.jpa.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.transaction.Transactional;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,6 +25,15 @@ public class UserService {
     private final PostRepository postRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private static final int FOLLOW_LIMIT = 50;
+    private static final long ONE_MINUTE = 60 * 1000L;
+
+    private final ConcurrentHashMap<Long, UserFollowTracker> followTracker = new ConcurrentHashMap<>();
+
+    private static class UserFollowTracker {
+        AtomicInteger count = new AtomicInteger(0);
+        long timestamp = System.currentTimeMillis();
+    }
 
     @Autowired
     public UserService(UserRepository userRepository,PostRepository postRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
@@ -144,6 +157,59 @@ public class UserService {
         return userRepository.findByUsername(username).isPresent();
     }
 
+    //FOLLOWING LOGIC
+    @Transactional
+    public Optional<User> followUser(Long userToFollow, Long userThatIsFollowing) {
+        if (!canFollow(userThatIsFollowing)) {
+            throw new IllegalStateException("Premasili ste limit od 50 pracenja po minuti. Pokusajte ponovo kasnije.");
+        }
 
+        Optional<User> followUserOpt = userRepository.findById(userToFollow);
+        Optional<User> userWhoFollowsOpt = userRepository.findById(userThatIsFollowing);
+
+        if (followUserOpt.isPresent() && userWhoFollowsOpt.isPresent()) {
+            User followUser = followUserOpt.get();
+            User userWhoFollows = userWhoFollowsOpt.get();
+
+            if (followUser.getFollowers().contains(userWhoFollows)) {
+                followUser.getFollowers().remove(userWhoFollows);
+                followUser.setFollowersCount(followUser.getFollowersCount() - 1);
+            } else {
+                followUser.getFollowers().add(userWhoFollows);
+                followUser.setFollowersCount(followUser.getFollowersCount() + 1);
+            }
+
+            userRepository.save(followUser);
+            return Optional.of(followUser);
+        }
+
+        return Optional.empty();
+    }
+
+    private boolean canFollow(Long userId) {
+        UserFollowTracker tracker = followTracker.computeIfAbsent(userId, id -> new UserFollowTracker());
+
+        synchronized (tracker) {
+            long currentTime = System.currentTimeMillis();
+
+            // Resetujte broj zahteva ako je proslo vise od jednog minuta
+            if (currentTime - tracker.timestamp > ONE_MINUTE) {
+                tracker.timestamp = currentTime;
+                tracker.count.set(0);
+            }
+
+            // Proverite da li je korisnik premasio limit
+            if (tracker.count.incrementAndGet() > FOLLOW_LIMIT) {
+                return false;
+            }
+
+            return true;
+        }
+    }
+    @Scheduled(fixedRate = 60000) // 60 000 milisekundi
+    public void cleanUpFollowTracker() {
+        long currentTime = System.currentTimeMillis();
+        followTracker.entrySet().removeIf(entry -> currentTime - entry.getValue().timestamp > ONE_MINUTE);
+    }
 
 }
