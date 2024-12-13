@@ -27,10 +27,10 @@ public class JpaExampleApplicationTests {
 
 	@Test
 	public void testConcurrentLikes() throws InterruptedException {
-		Long postId = 3L;
-		Long userId1 = 2L;
-		Long userId2 = 3L;
-		// Podsetnik: ovi ajdijevi moraju da postoje u bazi da bi radilo. LOGICNO!
+		Long postId = 1L;
+		Long userId1 = 1L;
+		Long userId2 = 2L;
+		// Ovi ajdijevi moraju da postoje
 
 		ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -45,6 +45,7 @@ public class JpaExampleApplicationTests {
 
 		Post post = postService.getPostById(postId)
 				.orElseThrow(() -> new RuntimeException("Post with ID " + postId + " not found"));
-		assert post.getLikes().size() == 2;
+
+		assert post.getLikes().size() == 2; // Adjust if toggling removes likes
 	}
 }

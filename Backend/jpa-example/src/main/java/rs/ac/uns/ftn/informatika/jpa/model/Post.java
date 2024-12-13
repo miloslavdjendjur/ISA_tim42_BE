@@ -45,17 +45,31 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments = new HashSet<>();
 
+    @Version
+    private Long version;
+
     // Constructors, Getters, Setters
 
-    public Post() {
+    @Column(nullable = false)
+    private int likesCount = 0;
+
+    public int getLikesCount() {
+        return likesCount;
     }
 
-    public Post(String description, Image image, LocalDateTime createdTime, User user, Location location) {
+    public void setLikesCount(int likesCount) {
+        this.likesCount = likesCount;
+    }
+
+    public Post() {}
+
+    public Post(String description, Image image, LocalDateTime createdTime, User user, Location location, int likesCount) {
         this.description = description;
         this.image = image;
         this.createdTime = createdTime;
         this.user = user;
         this.location = location;
+        this.likesCount = likesCount;
     }
 
     public Long getId() {

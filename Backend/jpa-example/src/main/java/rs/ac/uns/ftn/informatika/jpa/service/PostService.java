@@ -140,17 +140,20 @@ public class PostService {
     public ResponseEntity<Map<String, String>> toggleLike(Long postId, Long userId) {
         Map<String, String> response = new HashMap<>();
 
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
         User user = userService.getUserById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
         synchronized (this) {
-            if (post.getLikes().contains(user)) {
+            boolean alreadyLiked = post.getLikes().contains(user);
+
+            if (alreadyLiked) {
                 response.put("message", "Already liked");
             } else {
                 post.getLikes().add(user);
-                postRepository.save(post);
+                postRepository.incrementLikes(postId); // Ensure database-level atomicity
                 response.put("message", "Post liked");
             }
             response.put("likesCount", String.valueOf(post.getLikes().size()));
