@@ -144,6 +144,16 @@ public class UserService {
         return userRepository.findByUsername(username).isPresent();
     }
 
+    public Optional<ShowUserDTO> getShowUserById(Long id) {
+        return userRepository.findById(id)
+                .map(user -> new ShowUserDTO(
+                        user.getId(),
+                        user.getFullName(),
+                        user.getEmail(),
+                        postRepository.countByUserId(user.getId()), // Count the number of posts
+                        user.getFollowersCount() // Count the number of followers
+                ));
+    }
 
 
 }

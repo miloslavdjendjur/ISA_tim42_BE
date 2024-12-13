@@ -71,4 +71,11 @@ public class UserController {
                 Optional.ofNullable(criteria.getSortOrder()));
         return ResponseEntity.ok(filteredUsers);
     }
+
+    @GetMapping("/show/{id}")
+    public ResponseEntity<ShowUserDTO> getShowUserById(@PathVariable Long id) {
+        return userService.getShowUserById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 }
