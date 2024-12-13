@@ -100,10 +100,11 @@ public class PostController {
 
     // Add this method for GET /api/posts to fetch all posts
     @GetMapping("/all")
-    public ResponseEntity<List<PostViewDTO>> getAllPosts() {
-        List<PostViewDTO> posts = postService.getAllPosts();
+    public ResponseEntity<List<PostViewDTO>> getAllPosts(@RequestParam Long userId) {
+        List<PostViewDTO> posts = postService.getAllPosts(userId);
         return ResponseEntity.ok(posts);
     }
+
     @GetMapping("/all-comments/{id}")
     public ResponseEntity<List<CommentDTO>> getAllComments(@PathVariable Long id){
         List<CommentDTO> comments = postService.getPostComments(id);

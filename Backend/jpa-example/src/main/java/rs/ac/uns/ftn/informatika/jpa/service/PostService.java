@@ -79,23 +79,22 @@ public class PostService {
     }
 
     @Transactional
-    public List<PostViewDTO> getAllPosts() {
+    public List<PostViewDTO> getAllPosts(Long userId) {
         List<Post> posts = postRepository.findAll();
-        posts.forEach(post -> Hibernate.initialize(post.getComments()));
-        //List<Comment> comments = new ArrayList<>();
-        List<PostViewDTO> postDTOs = new ArrayList<>();
-        for (Post post : posts) {
-            PostViewDTO postDTO = new PostViewDTO(
-                    post.getId(),
-                    post.getDescription(),
-                    post.getImage().getPath(),
-                    post.getUser().getId(),
-                    post.getLikes().size(),
-                    post.getCreatedTime()
-            );
-            postDTOs.add(postDTO);
-        }
-        return postDTOs;
+        User currentUser = userService.getUserById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+
+        return posts.stream()
+                .map(post -> new PostViewDTO(
+                        post.getId(),
+                        post.getDescription(),
+                        post.getImage() != null ? post.getImage().getPath() : "assets/default.jpg", // Default image
+                        post.getUser() != null ? post.getUser().getId() : null, // Handle null user
+                        post.getUser() != null ? post.getUser().getUsername() : "Unknown", // Provide default username
+                        post.getLikes().size(),
+                        post.getCreatedTime(),
+                        post.getLikes().contains(currentUser) // Check if the user liked this post
+                ))
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -150,10 +149,12 @@ public class PostService {
             boolean alreadyLiked = post.getLikes().contains(user);
 
             if (alreadyLiked) {
-                response.put("message", "Already liked");
+                post.getLikes().remove(user); // Remove the user from likes
+                postRepository.decrementLikes(postId); // Persist the change
+                response.put("message", "Post unliked");
             } else {
-                post.getLikes().add(user);
-                postRepository.incrementLikes(postId); // Ensure database-level atomicity
+                post.getLikes().add(user); // Add the user to likes
+                postRepository.incrementLikes(postId); // Persist the change
                 response.put("message", "Post liked");
             }
             response.put("likesCount", String.valueOf(post.getLikes().size()));
@@ -161,4 +162,5 @@ public class PostService {
 
         return ResponseEntity.ok(response);
     }
+
 }
