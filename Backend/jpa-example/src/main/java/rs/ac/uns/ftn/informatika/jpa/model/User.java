@@ -145,8 +145,5 @@ public class User {
 
     public void setVerificationToken(String token) { this.verificationToken = token; }
 
-    public Set<User> getFollowers() {
-        return followers;
-    }
 
 }
