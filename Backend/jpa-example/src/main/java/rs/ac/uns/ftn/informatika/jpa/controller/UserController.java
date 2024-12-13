@@ -78,4 +78,8 @@ public class UserController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+    @PutMapping("/followUser/{id}")
+    public ResponseEntity<ShowUserDTO> followUser(@PathVariable Long id,@RequestBody ShowUserDTO userToFollow) {
+        return userService.followUser(userToFollow.getId(),id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
 }

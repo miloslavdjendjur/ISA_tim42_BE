@@ -5,6 +5,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
+import rs.ac.uns.ftn.informatika.jpa.mapper.UserDTOMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.UserRepository;
@@ -25,6 +26,7 @@ public class UserService {
     private final PostRepository postRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final UserDTOMapper userDTOMapper;
     private static final int FOLLOW_LIMIT = 50;
     private static final long ONE_MINUTE = 60 * 1000L;
 
@@ -36,12 +38,13 @@ public class UserService {
     }
 
     @Autowired
-    public UserService(UserRepository userRepository,PostRepository postRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
+    public UserService(UserRepository userRepository,PostRepository postRepository, PasswordEncoder passwordEncoder, EmailService emailService,UserDTOMapper userDTOMapper) {
 
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.userDTOMapper = userDTOMapper;
     }
 
     public List<User> getAllUsers() {
@@ -107,16 +110,14 @@ public class UserService {
             return 0; // Invalid token
         }
     }
+    @Transactional
     public List<ShowUserDTO> getAllUsers(Long adminId){
         List<User> users = userRepository.findAll();
         List<ShowUserDTO> showUserDTOs = new ArrayList<>();
         for (User user : users) {
             if(!user.getId().equals(adminId)) {
                 long postCount = postRepository.countByUserId(user.getId());
-                ShowUserDTO showUserDTO = new ShowUserDTO(
-                        user.getId(),user.getFullName(),user.getEmail(),postCount,user.getFollowersCount()
-                );
-                showUserDTOs.add(showUserDTO);
+                showUserDTOs.add(userDTOMapper.fromUserToDTO(user,postCount));
             }
         }
         return showUserDTOs;
@@ -157,23 +158,19 @@ public class UserService {
         return userRepository.findByUsername(username).isPresent();
     }
 
+    @Transactional
     public Optional<ShowUserDTO> getShowUserById(Long id) {
-        return userRepository.findById(id)
-                .map(user -> new ShowUserDTO(
-                        user.getId(),
-                        user.getFullName(),
-                        user.getEmail(),
-                        postRepository.countByUserId(user.getId()), // Count the number of posts
-                        user.getFollowersCount() // Count the number of followers
-                ));
+        User user = userRepository.findById(id).get();
+        long postCount = postRepository.countByUserId(user.getId());
+        ShowUserDTO userToReturn = userDTOMapper.fromUserToDTO(user,postCount);
+        return Optional.of(userToReturn);
     }
     //FOLLOWING LOGIC
     @Transactional
-    public Optional<User> followUser(Long userToFollow, Long userThatIsFollowing) {
+    public Optional<ShowUserDTO> followUser(Long userToFollow, Long userThatIsFollowing) {
         if (!canFollow(userThatIsFollowing)) {
             throw new IllegalStateException("Premasili ste limit od 50 pracenja po minuti. Pokusajte ponovo kasnije.");
         }
-
         Optional<User> followUserOpt = userRepository.findById(userToFollow);
         Optional<User> userWhoFollowsOpt = userRepository.findById(userThatIsFollowing);
 
@@ -182,15 +179,25 @@ public class UserService {
             User userWhoFollows = userWhoFollowsOpt.get();
 
             if (followUser.getFollowers().contains(userWhoFollows)) {
+                // Otprati korisnika
                 followUser.getFollowers().remove(userWhoFollows);
                 followUser.setFollowersCount(followUser.getFollowersCount() - 1);
+
+                userWhoFollows.setNumberOfPeopleFollowing(userWhoFollows.getNumberOfPeopleFollowing() - 1);
             } else {
+                // Zaprati korisnika
                 followUser.getFollowers().add(userWhoFollows);
                 followUser.setFollowersCount(followUser.getFollowersCount() + 1);
+
+                userWhoFollows.setNumberOfPeopleFollowing(userWhoFollows.getNumberOfPeopleFollowing() + 1);
             }
 
+            // Sacuvaj izmene za oba korisnika
             userRepository.save(followUser);
-            return Optional.of(followUser);
+            userRepository.save(userWhoFollows);
+            long postCount = postRepository.countByUserId(followUser.getId());
+            ShowUserDTO userToReturn = userDTOMapper.fromUserToDTO(followUser,postCount);
+            return Optional.of(userToReturn);
         }
 
         return Optional.empty();
@@ -221,5 +228,6 @@ public class UserService {
         long currentTime = System.currentTimeMillis();
         followTracker.entrySet().removeIf(entry -> currentTime - entry.getValue().timestamp > ONE_MINUTE);
     }
+
 
 }

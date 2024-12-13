@@ -54,8 +54,8 @@ public class User {
     )
     private Set<User> followers = new HashSet<>();
 
-    @ManyToMany(mappedBy = "followers", fetch = FetchType.LAZY)
-    private Set<User> following = new HashSet<>();
+    @Column(nullable = false)
+    private int numberOfPeopleFollowing = 0;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -137,6 +137,13 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+    public int getNumberOfPeopleFollowing() {
+        return numberOfPeopleFollowing;
+    }
+
+    public void setNumberOfPeopleFollowing(int numberOfPeopleFollowing) {
+        this.numberOfPeopleFollowing = numberOfPeopleFollowing;
     }
 
     public void setActive(boolean active) { this.isActive = active; }
