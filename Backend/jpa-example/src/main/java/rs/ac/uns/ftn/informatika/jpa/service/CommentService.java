@@ -1,7 +1,9 @@
 package rs.ac.uns.ftn.informatika.jpa.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import rs.ac.uns.ftn.informatika.jpa.model.Comment;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
@@ -33,14 +35,14 @@ public class CommentService {
 
         // Prvoera da li je pratilac ili vlasnik posta
         if (!post.getUser().equals(user) && !post.getUser().getFollowers().contains(user)) {
-            throw new RuntimeException("You must follow the post's owner to comment.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You must follow the post's owner to comment.");
         }
 
         // Provera za limit od 60 komentara u satu
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
         long commentCount = commentRepository.countByUserIdAndCreatedTimeAfter(userId, oneHourAgo);
         if (commentCount >= 60) {
-            throw new RuntimeException("You can only comment 60 times per hour.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only comment 60 times per hour.");
         }
 
         Comment comment = new Comment(text, LocalDateTime.now(), user, post);
