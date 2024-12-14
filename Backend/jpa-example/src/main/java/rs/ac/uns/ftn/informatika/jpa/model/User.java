@@ -54,8 +54,8 @@ public class User {
     )
     private Set<User> followers = new HashSet<>();
 
-    @ManyToMany(mappedBy = "followers", fetch = FetchType.LAZY)
-    private Set<User> following = new HashSet<>();
+    @Column(nullable = false)
+    private int numberOfPeopleFollowing = 0;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -63,10 +63,18 @@ public class User {
     @Column(nullable = false)
     private boolean activated = false;
 
+    @Version
+    private Integer version;
+
     public enum Role {
         UNAUTHENTICATED, REGISTERED, ADMIN
     }
-
+    public Set<User> getFollowers() {
+        return followers;
+    }
+    public void setFollowers(Set<User> followers) {
+        this.followers = followers;
+    }
     public Long getId() {
         return id;
     }
@@ -130,6 +138,13 @@ public class User {
     public void setRole(Role role) {
         this.role = role;
     }
+    public int getNumberOfPeopleFollowing() {
+        return numberOfPeopleFollowing;
+    }
+
+    public void setNumberOfPeopleFollowing(int numberOfPeopleFollowing) {
+        this.numberOfPeopleFollowing = numberOfPeopleFollowing;
+    }
 
     public void setActive(boolean active) { this.isActive = active; }
 
@@ -137,8 +152,5 @@ public class User {
 
     public void setVerificationToken(String token) { this.verificationToken = token; }
 
-    public Set<User> getFollowers() {
-        return followers;
-    }
 
 }
