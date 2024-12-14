@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import rs.ac.uns.ftn.informatika.jpa.dto.FilterCriteriaDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.service.UserService;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -82,4 +84,21 @@ public class UserController {
     public ResponseEntity<ShowUserDTO> followUser(@PathVariable Long id,@RequestBody ShowUserDTO userToFollow) {
         return userService.followUser(userToFollow.getId(),id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/followUserId/{userThatFollows}")
+    public ResponseEntity<ShowUserDTO> followUserById(
+            @PathVariable Long userThatFollows,
+            @RequestBody Map<String, Long> payload // Expect userToFollow as a key in the payload
+    ) {
+        Long userToFollow = payload.get("userToFollow");
+        if (userToFollow == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User to follow is required.");
+        }
+
+        return userService.followUserById(userToFollow, userThatFollows)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+
 }

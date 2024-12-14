@@ -1,9 +1,11 @@
 package rs.ac.uns.ftn.informatika.jpa.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
 import rs.ac.uns.ftn.informatika.jpa.mapper.UserDTOMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
@@ -202,6 +204,50 @@ public class UserService {
 
         return Optional.empty();
     }
+
+    @Transactional
+    public Optional<ShowUserDTO> followUserById(Long userToFollow, Long userThatIsFollowing) {
+        if (userToFollow.equals(userThatIsFollowing)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot follow yourself.");
+        }
+
+        if (!canFollow(userThatIsFollowing)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only follow 50 times per minute.");
+        }
+
+        Optional<User> followUserOpt = userRepository.findById(userToFollow);
+        Optional<User> userWhoFollowsOpt = userRepository.findById(userThatIsFollowing);
+
+        if (followUserOpt.isPresent() && userWhoFollowsOpt.isPresent()) {
+            User followUser = followUserOpt.get();
+            User userWhoFollows = userWhoFollowsOpt.get();
+
+            // Check if the user already follows the target
+            boolean alreadyFollowing = followUser.getFollowers().contains(userWhoFollows);
+
+            if (alreadyFollowing) {
+                // Unfollow logic
+                followUser.getFollowers().remove(userWhoFollows);
+                followUser.setFollowersCount(followUser.getFollowersCount() - 1);
+                userWhoFollows.setNumberOfPeopleFollowing(userWhoFollows.getNumberOfPeopleFollowing() - 1);
+            } else {
+                // Follow logic
+                followUser.getFollowers().add(userWhoFollows);
+                followUser.setFollowersCount(followUser.getFollowersCount() + 1);
+                userWhoFollows.setNumberOfPeopleFollowing(userWhoFollows.getNumberOfPeopleFollowing() + 1);
+            }
+
+            userRepository.save(followUser);
+            userRepository.save(userWhoFollows);
+
+            long postCount = postRepository.countByUserId(followUser.getId());
+            ShowUserDTO userToReturn = userDTOMapper.fromUserToDTO(followUser, postCount);
+            return Optional.of(userToReturn);
+        }
+
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found.");
+    }
+
 
     private boolean canFollow(Long userId) {
         UserFollowTracker tracker = followTracker.computeIfAbsent(userId, id -> new UserFollowTracker());
