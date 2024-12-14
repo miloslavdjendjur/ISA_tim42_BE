@@ -31,12 +31,12 @@ public class CommentService {
         Post post = postHelper.getPostById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        // Check if the user follows the post owner
-        if (!post.getUser().getFollowers().contains(user)) {
+        // Prvoera da li je pratilac ili vlasnik posta
+        if (!post.getUser().equals(user) && !post.getUser().getFollowers().contains(user)) {
             throw new RuntimeException("You must follow the post's owner to comment.");
         }
 
-        // Check if the user exceeded the comment limit
+        // Provera za limit od 60 komentara u satu
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
         long commentCount = commentRepository.countByUserIdAndCreatedTimeAfter(userId, oneHourAgo);
         if (commentCount >= 60) {
