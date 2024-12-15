@@ -97,6 +97,8 @@ public class AuthController {
             response.put("activated", user.getActive());
             response.put("message", "Login successful!");
 
+            userService.updateLastLogin(user.getId());
+
             return ResponseEntity.ok(response);
         } catch (AuthenticationException e) {
             response.put("message", "Invalid credentials");

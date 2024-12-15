@@ -4,7 +4,10 @@ import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Entity
@@ -41,18 +44,7 @@ public class User {
     private String verificationToken;
 
     @Column(nullable = false)
-    private int followersCount = 0;
-
-//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-//    private Set<Post> posts = new HashSet<>();
-
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "user_followers",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "follower_id")
-    )
-    private Set<User> followers = new HashSet<>();
+    private LocalDateTime lastLogin;
 
     @Column(nullable = false)
     private int numberOfPeopleFollowing = 0;
@@ -69,12 +61,7 @@ public class User {
     public enum Role {
         UNAUTHENTICATED, REGISTERED, ADMIN
     }
-    public Set<User> getFollowers() {
-        return followers;
-    }
-    public void setFollowers(Set<User> followers) {
-        this.followers = followers;
-    }
+
     public Long getId() {
         return id;
     }
@@ -123,14 +110,6 @@ public class User {
         this.address = address;
     }
 
-    public int getFollowersCount() {
-        return followersCount;
-    }
-
-    public void setFollowersCount(int followersCount) {
-        this.followersCount = followersCount;
-    }
-
     public Role getRole() {
         return role;
     }
@@ -152,5 +131,11 @@ public class User {
 
     public void setVerificationToken(String token) { this.verificationToken = token; }
 
+    public LocalDateTime getLastLogin() {
+        return lastLogin;
+    }
 
+    public void setLastLogin(LocalDateTime lastLogin) {
+        this.lastLogin = lastLogin;
+    }
 }

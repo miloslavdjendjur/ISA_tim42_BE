@@ -9,9 +9,12 @@ import org.springframework.web.server.ResponseStatusException;
 import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
 import rs.ac.uns.ftn.informatika.jpa.mapper.UserDTOMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
+import rs.ac.uns.ftn.informatika.jpa.model.UserFollower;
 import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
+import rs.ac.uns.ftn.informatika.jpa.repository.UserFollowerRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javax.transaction.Transactional;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserFollowerRepository userFollowerRepository;
     private final PostRepository postRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -40,9 +44,9 @@ public class UserService {
     }
 
     @Autowired
-    public UserService(UserRepository userRepository,PostRepository postRepository, PasswordEncoder passwordEncoder, EmailService emailService,UserDTOMapper userDTOMapper) {
-
+    public UserService(UserRepository userRepository, UserFollowerRepository userFollowerRepository,PostRepository postRepository, PasswordEncoder passwordEncoder, EmailService emailService,UserDTOMapper userDTOMapper) {
         this.userRepository = userRepository;
+        this.userFollowerRepository = userFollowerRepository;
         this.postRepository = postRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
@@ -72,6 +76,14 @@ public class UserService {
         });
     }
 
+    @Transactional
+    public void updateLastLogin(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
@@ -85,7 +97,10 @@ public class UserService {
         user.setVerificationToken(token);
         user.setActive(false);
 
+        // Set default values
+        user.setLastLogin(LocalDateTime.now()); // Postavi trenutni datum i vreme
         user.setRole(User.Role.REGISTERED);
+
         // Save the user
         User savedUser = userRepository.save(user);
 
@@ -94,6 +109,7 @@ public class UserService {
 
         return savedUser;
     }
+
 
     public int activateUser(String token) {
         Optional<User> userOptional = userRepository.findByVerificationToken(token);
@@ -113,17 +129,19 @@ public class UserService {
         }
     }
     @Transactional
-    public List<ShowUserDTO> getAllUsers(Long adminId){
+    public List<ShowUserDTO> getAllUsers(Long adminId) {
         List<User> users = userRepository.findAll();
         List<ShowUserDTO> showUserDTOs = new ArrayList<>();
         for (User user : users) {
-            if(!user.getId().equals(adminId)) {
+            if (!user.getId().equals(adminId)) {
                 long postCount = postRepository.countByUserId(user.getId());
-                showUserDTOs.add(userDTOMapper.fromUserToDTO(user,postCount));
+                long followersCount = userFollowerRepository.countFollowers(user.getId());
+                showUserDTOs.add(userDTOMapper.fromUserToDTO(user, postCount, followersCount));
             }
         }
         return showUserDTOs;
     }
+
     public List<ShowUserDTO> filterUsers(Long adminId, Optional<String> name, Optional<String> surname, Optional<String> email,
                                          Optional<Integer> minPosts, Optional<Integer> maxPosts,
                                          Optional<String> sortField, Optional<String> sortOrder) {
@@ -162,17 +180,22 @@ public class UserService {
 
     @Transactional
     public Optional<ShowUserDTO> getShowUserById(Long id) {
-        User user = userRepository.findById(id).get();
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         long postCount = postRepository.countByUserId(user.getId());
-        ShowUserDTO userToReturn = userDTOMapper.fromUserToDTO(user,postCount);
+        long followersCount = userFollowerRepository.countFollowers(user.getId());
+        ShowUserDTO userToReturn = userDTOMapper.fromUserToDTO(user, postCount, followersCount);
         return Optional.of(userToReturn);
     }
-    //FOLLOWING LOGIC
+
+
+    // FOLLOW
     @Transactional
     public Optional<ShowUserDTO> followUser(Long userToFollow, Long userThatIsFollowing) {
         if (!canFollow(userThatIsFollowing)) {
-            throw new IllegalStateException("Premasili ste limit od 50 pracenja po minuti. Pokusajte ponovo kasnije.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Follow limit of 50 per minute reached. Please try again later.");
         }
+
         Optional<User> followUserOpt = userRepository.findById(userToFollow);
         Optional<User> userWhoFollowsOpt = userRepository.findById(userThatIsFollowing);
 
@@ -180,29 +203,25 @@ public class UserService {
             User followUser = followUserOpt.get();
             User userWhoFollows = userWhoFollowsOpt.get();
 
-            if (followUser.getFollowers().contains(userWhoFollows)) {
-                // Otprati korisnika
-                followUser.getFollowers().remove(userWhoFollows);
-                followUser.setFollowersCount(followUser.getFollowersCount() - 1);
+            boolean alreadyFollowing = userFollowerRepository.existsByUserIdAndFollowerId(userToFollow, userThatIsFollowing);
 
-                userWhoFollows.setNumberOfPeopleFollowing(userWhoFollows.getNumberOfPeopleFollowing() - 1);
+            if (alreadyFollowing) {
+                userFollowerRepository.deleteByUserIdAndFollowerId(userToFollow, userThatIsFollowing);
             } else {
-                // Zaprati korisnika
-                followUser.getFollowers().add(userWhoFollows);
-                followUser.setFollowersCount(followUser.getFollowersCount() + 1);
-
-                userWhoFollows.setNumberOfPeopleFollowing(userWhoFollows.getNumberOfPeopleFollowing() + 1);
+                UserFollower userFollower = new UserFollower();
+                userFollower.setUser(followUser);
+                userFollower.setFollower(userWhoFollows);
+                userFollower.setFollowedSince(LocalDateTime.now());
+                userFollowerRepository.save(userFollower);
             }
 
-            // Sacuvaj izmene za oba korisnika
-            userRepository.save(followUser);
-            userRepository.save(userWhoFollows);
             long postCount = postRepository.countByUserId(followUser.getId());
-            ShowUserDTO userToReturn = userDTOMapper.fromUserToDTO(followUser,postCount);
+            long followersCount = userFollowerRepository.countFollowers(followUser.getId());
+            ShowUserDTO userToReturn = userDTOMapper.fromUserToDTO(followUser, postCount, followersCount);
             return Optional.of(userToReturn);
         }
 
-        return Optional.empty();
+        throw new RuntimeException("User not found");
     }
 
     @Transactional
@@ -223,25 +242,23 @@ public class UserService {
             User userWhoFollows = userWhoFollowsOpt.get();
 
             // Check if the user already follows the target
-            boolean alreadyFollowing = followUser.getFollowers().contains(userWhoFollows);
+            boolean alreadyFollowing = userFollowerRepository.existsByUserIdAndFollowerId(userToFollow, userThatIsFollowing);
 
             if (alreadyFollowing) {
                 // Unfollow logic
-                followUser.getFollowers().remove(userWhoFollows);
-                followUser.setFollowersCount(followUser.getFollowersCount() - 1);
-                userWhoFollows.setNumberOfPeopleFollowing(userWhoFollows.getNumberOfPeopleFollowing() - 1);
+                userFollowerRepository.deleteByUserIdAndFollowerId(userToFollow, userThatIsFollowing);
             } else {
                 // Follow logic
-                followUser.getFollowers().add(userWhoFollows);
-                followUser.setFollowersCount(followUser.getFollowersCount() + 1);
-                userWhoFollows.setNumberOfPeopleFollowing(userWhoFollows.getNumberOfPeopleFollowing() + 1);
+                UserFollower userFollower = new UserFollower();
+                userFollower.setUser(followUser);
+                userFollower.setFollower(userWhoFollows);
+                userFollower.setFollowedSince(LocalDateTime.now());
+                userFollowerRepository.save(userFollower);
             }
 
-            userRepository.save(followUser);
-            userRepository.save(userWhoFollows);
-
             long postCount = postRepository.countByUserId(followUser.getId());
-            ShowUserDTO userToReturn = userDTOMapper.fromUserToDTO(followUser, postCount);
+            long followersCount = userFollowerRepository.countFollowers(followUser.getId());
+            ShowUserDTO userToReturn = userDTOMapper.fromUserToDTO(followUser, postCount, followersCount);
             return Optional.of(userToReturn);
         }
 
@@ -275,5 +292,37 @@ public class UserService {
         followTracker.entrySet().removeIf(entry -> currentTime - entry.getValue().timestamp > ONE_MINUTE);
     }
 
+    @Scheduled(cron = "0 0 8 * * ?") // Svakog dana u 8:00
+    @Transactional
+    public void sendWeeklySummaries() {
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+
+        List<User> inactiveUsers = userRepository.findAll().stream()
+                .filter(user -> user.getLastLogin() == null || user.getLastLogin().isBefore(sevenDaysAgo))
+                .collect(Collectors.toList());
+
+        for (User user : inactiveUsers) {
+            String summary = generateWeeklySummary(user);
+            emailService.sendWeeklySummary(user.getEmail(), summary);
+        }
+    }
+
+    private String generateWeeklySummary(User user) {
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+
+        // Count new followers in the last 7 days
+        long newFollowers = userFollowerRepository.countNewFollowersSince(user.getId(), sevenDaysAgo);
+
+        // Count new likes in the last 7 days
+        long newLikes = postRepository.countLikesInLast7Days(user.getId(), sevenDaysAgo);
+
+        // Count new posts in the last 7 days
+        long newPosts = postRepository.countByUserIdAndCreatedTimeAfter(user.getId(), sevenDaysAgo);
+
+        return String.format(
+                "Dear %s,\n\nHere is your weekly summary:\n- New followers: %d\n- New likes: %d\n- New posts: %d\n\nLog in to check more updates!",
+                user.getFullName(), newFollowers, newLikes, newPosts
+        );
+    }
 
 }

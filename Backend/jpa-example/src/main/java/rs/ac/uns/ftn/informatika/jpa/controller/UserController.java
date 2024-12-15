@@ -100,5 +100,10 @@ public class UserController {
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-
+    @GetMapping("/sendWeeklySummaries")
+    public ResponseEntity<String> sendWeeklySummaries() {
+        System.out.println("sendWeeklySummaries called");
+        userService.sendWeeklySummaries();
+        return ResponseEntity.ok("Weekly summaries sent successfully.");
+    }
 }

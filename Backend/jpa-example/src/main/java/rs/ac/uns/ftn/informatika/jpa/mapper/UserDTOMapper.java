@@ -19,8 +19,7 @@ public class UserDTOMapper {
         UserDTOMapper.modelMapper = modelMapper;
     }
 
-    public static ShowUserDTO fromUserToDTO(User user,long postCount) {
-
+    public static ShowUserDTO fromUserToDTO(User user, long postCount, long followersCount) {
         ShowUserDTO dto = new ShowUserDTO(
                 user.getId(),
                 user.getFullName(),
@@ -28,16 +27,11 @@ public class UserDTOMapper {
                 postCount,
                 user.getNumberOfPeopleFollowing(),
                 user.getUsername(),
-                user.getFollowersCount(),
-                user.getFollowers().stream()
-                        .map(User::getId)
-                        .collect(Collectors.toList())
+                (int) followersCount, // Cast long to int
+                null // Followers list is no longer directly included
         );
         return dto;
     }
-    /*public static User fromDTOToUser(ShowUserDTO dto) {
-        User user = modelMapper.map(dto, User.class);
-        return user;
-    }*/
+
 
 }

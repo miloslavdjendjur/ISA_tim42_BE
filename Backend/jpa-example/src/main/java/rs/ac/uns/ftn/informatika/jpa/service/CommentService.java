@@ -8,6 +8,7 @@ import rs.ac.uns.ftn.informatika.jpa.model.Comment;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.repository.CommentRepository;
+import rs.ac.uns.ftn.informatika.jpa.repository.UserFollowerRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,12 +18,14 @@ import java.util.Optional;
 public class CommentService {
 
     private final CommentRepository commentRepository;
+    private final UserFollowerRepository userFollowerRepository;
     private final UserService userService;
     private final PostHelper postHelper;
 
     @Autowired
-    public CommentService(CommentRepository commentRepository, UserService userService, PostHelper postHelper) {
+    public CommentService(CommentRepository commentRepository, UserFollowerRepository userFollowerRepository, UserService userService, PostHelper postHelper) {
         this.commentRepository = commentRepository;
+        this.userFollowerRepository = userFollowerRepository;
         this.userService = userService;
         this.postHelper = postHelper;
     }
@@ -34,7 +37,7 @@ public class CommentService {
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
         // Prvoera da li je pratilac ili vlasnik posta
-        if (!post.getUser().equals(user) && !post.getUser().getFollowers().contains(user)) {
+        if (!post.getUser().equals(user) && !userFollowerRepository.existsByUserIdAndFollowerId(post.getUser().getId(), user.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You must follow the post's owner to comment.");
         }
 

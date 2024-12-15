@@ -25,4 +25,13 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    public void sendWeeklySummary(String to, String summary) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("Your Weekly Summary");
+        message.setText(summary);
+
+        mailSender.send(message);
+    }
 }

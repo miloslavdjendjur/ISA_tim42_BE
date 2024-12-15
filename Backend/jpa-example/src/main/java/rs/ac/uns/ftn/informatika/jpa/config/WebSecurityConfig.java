@@ -71,7 +71,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/users/{id}",
                         "/api/users/show/{id}",
                         "/api/users/followUser/{id}",
-                        "/api/users/followUserId/{id}"
+                        "/api/users/followUserId/{id}",
+                        "/api/users/sendWeeklySummaries/"
                 ).permitAll()
                 .anyRequest().authenticated();
     }
